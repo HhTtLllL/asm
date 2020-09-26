@@ -201,6 +201,7 @@ p_mode_start:
 
     call setup_page                         ;创建页目录及页表并初始化页内存位图
 
+
 ;要将描述符表地址及偏移量写入内存gdt_ptr,一会用新地址重新加载 
     sgdt [gdt_ptr]                          ;存储到原来gdt所有的位置 
 ;将gdt描述符中视频段描述符中的段基址 + 0xc0000000 
@@ -238,11 +239,44 @@ enter_kernel:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     call kernel_init
     mov esp, 0xc009f000 
-    jmp KERNEL_ENTRY_POINT                      ;用地址0x1500访问测试
+    jmp KERNEL_ENTRY_POINT                      ;用地址0x1500访问测试  
+
+;--------------------- 将kernel.bin 中的segment拷贝到编译的地址 ---------------- 
+kernel_inti:
+
+    xor eax, eax                        
+    xor ebx, ebx                        ;ebx 记录程序头表地址
+    xor ecx, ecx                        ;cx 记录程序头表中的program header 数量 
+    xor edx, edx                        ;dx 记录program header 尺寸, e_phentsize   
+    
+    mov dx, [KERNEL_BIN_BASE_ADDR + 42] ;偏移文件 42字节处的属性是 e_phentsize, 表示program header 大小 
+    mov ebx, [KERNEL_BIN_BASE_ADDR + 28];偏移文件开始部分 28 字节的地方是 e_phoff, 表示第一个program header 在文件中的偏移量
+                                        ;其实该值是0x34,  
+
+    add ebx, KERNEL_BIN_BASE_ADDR 
+    mov cx, [KERNEL_BIN_BASE_ADDR + 44] ;偏移文件开始部分 44 字节的地方是e_phnum, 表示有几个 program header  
+
+.each_segment:
+
+    cmp byte [ebx, 0], PT_NULL          ;若p_type等于 PT_NULL,说明此program header 没有使用 
+    je .PTNULL 
+
+;为函数memcpy 压入参数,参数是从右往左依次压入, 函数原型类似于 memcpy(dst, src, size )
+    push dword [ebx + 16]               ;program header 中偏移16字节的地方是 p_filesz, 压入函数memcpy 的第三个参数 size 
+    move eax, [ebx + 4]                 ;距程序头偏移为 4 字节的位置是p_offset 
+    add eax, KERNEL_BIN_BASE_ADDR       ;加上kernel.bin 被加载到的物理地址, eax为该段的物理地址 
+
+    push eax                            ;压入函数 memcpy的第二个参数:原地址 
+    push dword [ebx + 8]                ;压入函数memcpy的第一个参数:目的地址, 偏移程序头8字节的位置是p_vaddr, 这就是目的地址 
+    call memory_
 
 
 
-;----------------- 将kernel.bin 中的segment 拷贝到编译的地址
+
+
+
+
+
 
 ;-----------------创建页目录及页表 -------------
 setup_page:
