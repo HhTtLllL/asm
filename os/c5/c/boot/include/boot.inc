@@ -2,12 +2,18 @@
 
 LOADER_BASE_ADDR        equ 0x900          ;定义了 loader 在内存中的位置 说明loader 加载的时候会在内存地址 0x900处 
 LOADER_START_SECTOR     equ 0x2         ;定义了 定义了loader在硬盘上的逻辑扇区地址,即 LBA地址.等于 0x2 说明放在第2块扇区
+;LOADER_STACK_TOP        equ LOADER_BASE_ADDR 
 
 KERNEL_BIN_BASE_ADDR    equ 0x70000 
-KERNEL_IMAGE_BASE_ADDR  equ 0x1500 
+;KERNEL_IMAGE_BASE_ADDR equ 0x1500 
 KERNEL_START_SECTOR     equ 0x9 
+KERNEL_ENTRY_POINT      equ 0xc0001500 
+
+
+;--------------- 页表配置 --------------------
 
 PAGE_DIR_TABLE_POS      equ 0x100000
+
 
 ;DESC_字段名_字段相关信息
 ;-------------------- gdt 描述符属性----------------
@@ -89,7 +95,8 @@ PG_US_S equ 000b
 PG_US_U equ 100b 
 
 
-
+;------------------------- program type 定义 ------------------------
+PT_NULL equ 0
 
 
 

@@ -1,0 +1,15 @@
+///////////////////////////////////////////////////////////////
+// File Name: main.c
+// Author: tt
+// Email: tttt@xiyoulinux.org
+// Created Time : 2020-09-24 19:58:33
+// Description:
+///////////////////////////////////////////////////////////////
+
+//int main(void) 
+int _start(void)
+{
+    while(1);
+
+    return 0;
+}

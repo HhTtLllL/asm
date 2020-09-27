@@ -242,7 +242,7 @@ enter_kernel:
     jmp KERNEL_ENTRY_POINT                      ;用地址0x1500访问测试  
 
 ;--------------------- 将kernel.bin 中的segment拷贝到编译的地址 ---------------- 
-kernel_inti:
+kernel_init:
 
     xor eax, eax                        
     xor ebx, ebx                        ;ebx 记录程序头表地址
@@ -258,25 +258,46 @@ kernel_inti:
 
 .each_segment:
 
-    cmp byte [ebx, 0], PT_NULL          ;若p_type等于 PT_NULL,说明此program header 没有使用 
+    cmp byte [ebx + 0], PT_NULL          ;若p_type等于 PT_NULL,说明此program header 没有使用 
     je .PTNULL 
 
 ;为函数memcpy 压入参数,参数是从右往左依次压入, 函数原型类似于 memcpy(dst, src, size )
     push dword [ebx + 16]               ;program header 中偏移16字节的地方是 p_filesz, 压入函数memcpy 的第三个参数 size 
-    move eax, [ebx + 4]                 ;距程序头偏移为 4 字节的位置是p_offset 
+    mov eax, [ebx + 4]                 ;距程序头偏移为 4 字节的位置是p_offset 
     add eax, KERNEL_BIN_BASE_ADDR       ;加上kernel.bin 被加载到的物理地址, eax为该段的物理地址 
 
     push eax                            ;压入函数 memcpy的第二个参数:原地址 
     push dword [ebx + 8]                ;压入函数memcpy的第一个参数:目的地址, 偏移程序头8字节的位置是p_vaddr, 这就是目的地址 
-    call memory_
+    call mem_cpy                        ;调用mem_cpy 完成段复制 
+    add esp, 12                         ;清理栈中压入的三个参数 
 
+.PTNULL:
+    add ebx, edx                        ;edx 为program header 大小,即e_phentsize  
 
+    loop .each_segment 
 
+    ret 
 
+;--------------- 逐字节拷贝  mem_cpy  (dst, src, size )  ----------------------
+;输入: 栈中三个参数(dst, src, size )  
+;输出: 无
+;------------------------------------------------------------------------------
 
+mem_cpy:
+    cld 
+    push ebp 
+    mov ebp, esp 
+    push ecx                            ;rep 指令用到了ecx ,单ecx 对于外层段的循环还有用,所以先入栈备份
 
-
-
+    mov edi, [ebp + 8]                  ;dst 
+    mov esi, [ebp + 12]                 ;src 
+    mov ecx, [ebp + 16]                 ;size 
+    rep movsb                           ;逐字节拷贝
+    
+;恢复环境
+    pop ecx 
+    pop ebp 
+    ret 
 
 ;-----------------创建页目录及页表 -------------
 setup_page:
