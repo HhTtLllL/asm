@@ -22,12 +22,11 @@
 /*中断门描述符结构体*/
 
 struct gate_desc {
-    uint16_t func_offset_low_word;
-    uint16_t selector; 
-    uint8_t dcount;             //此项为双字计数段,是门描述符中第4字节,此项固定值 
-
-    uint8_t attribute;          
-    uint16_t func_offset_high_word; 
+    uint16_t    func_offset_low_word;
+    uint16_t    selector; 
+    uint8_t     dcount;             //此项为双字计数段,是门描述符中第4字节,此项固定值 
+    uint8_t     attribute;          
+    uint16_t    func_offset_high_word; 
 };
 
 

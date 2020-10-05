@@ -1,7 +1,6 @@
 [bits 32] 
 
 %define ERROR_CODE nop      ;若在相关的异常中CPU已经自动压入了错误码,为保持栈中格式统一,这里不做操作
-
 %define ZERO push 0         ;若在相关的异常中CPU中没有压入错误码,为了栈中格式统一,手工压入一个0 
 
 extern put_str              ;声明外部函数
@@ -9,8 +8,8 @@ extern put_str              ;声明外部函数
 section .data
 
 intr_str db "interrupt occur!", 0xa, 0 
-
 global intr_entry_table 
+
 intr_entry_table:
 
 ;这是一个宏

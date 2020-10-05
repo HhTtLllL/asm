@@ -51,7 +51,8 @@ intr_exit:
     pop gs 
     pop fs 
     pop es 
-    popad
+    pop ds 
+ ;   popad
 
     add esp, 4              ;跳过error_code 
 
