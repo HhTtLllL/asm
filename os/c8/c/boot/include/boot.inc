@@ -1,7 +1,18 @@
 ;-------------- loader , kernel ---------------------
 
-LOADER_BASE_ADDR equ 0x900          ;定义了 loader 在内存中的位置 说明loader 加载的时候会在内存地址 0x900处 
-LOADER_START_SECTOR equ 0x2         ;定义了 定义了loader在硬盘上的逻辑扇区地址,即 LBA地址.等于 0x2 说明放在第2块扇区
+LOADER_BASE_ADDR        equ 0x900          ;定义了 loader 在内存中的位置 说明loader 加载的时候会在内存地址 0x900处 
+LOADER_START_SECTOR     equ 0x2         ;定义了 定义了loader在硬盘上的逻辑扇区地址,即 LBA地址.等于 0x2 说明放在第2块扇区
+;LOADER_STACK_TOP        equ LOADER_BASE_ADDR 
+
+KERNEL_BIN_BASE_ADDR    equ 0x70000 
+;KERNEL_IMAGE_BASE_ADDR equ 0x1500 
+KERNEL_START_SECTOR     equ 0x9 
+KERNEL_ENTRY_POINT      equ 0xc0001500 
+
+
+;--------------- 页表配置 --------------------
+
+PAGE_DIR_TABLE_POS      equ 0x100000
 
 
 ;DESC_字段名_字段相关信息
@@ -62,7 +73,7 @@ DESC_TYPE_DATA + 0x00
 
 DESC_VIDEO_HIGH4 equ (0x00 << 24) + DESC_G_4K + DESC_D_32 +\
 DESC_L + DESC_AVL + DESC_LIMIT_VIDEO2 + DESC_P + \
-DESC_DPL_0 + DESC_S_DATA + DESC_TYPE_DATA + 0x00
+DESC_DPL_0 + DESC_S_DATA + DESC_TYPE_DATA + 0x0b
 
 ;-------------- 选择子属性 ---------------
 
@@ -72,4 +83,20 @@ RPL2 equ 10b
 RPL3 equ 11b
 TI_GDT equ 000b
 TI_LDT equ 100b
+
+
+
+
+;--------------页表相关属性  -----------------------
+PG_P    equ 1b 
+PG_RW_R equ 00b 
+PG_RW_W equ 10b 
+PG_US_S equ 000b 
+PG_US_U equ 100b 
+
+
+;------------------------- program type 定义 ------------------------
+PT_NULL equ 0
+
+
 

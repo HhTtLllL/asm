@@ -54,7 +54,7 @@ SECTION MBR vstart=0x7c00
     ; eax, bx, cx 为函数 rd_dsk_m_16 传递参数
     mov eax, LOADER_START_SECTOR   ;起始扇区lba 地址 0x2 , 即第二块扇区
     mov bx,  LOADER_BASE_ADDR      ;写入的地址  --即从硬盘中读取的数据存放在内存什么地方 0x900,
-    mov cx,  1                     ;待读入的扇区数
+    mov cx,  4                     ;待读入的扇区数
     call rd_disk_m_16              ;以下读取程序的起始部分(一个扇区) 
 
     jmp LOADER_BASE_ADDR    
