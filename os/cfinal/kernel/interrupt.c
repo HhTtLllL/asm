@@ -101,9 +101,33 @@ static void general_intr_handler(uint8_t vec_nr) {
         return ;
     }
 
-    put_str("int vector: 0x");
-    put_int(vec_nr);
-    put_char('\n');
+    //将光标置为0，从屏幕左上角清出一片打印异常信息的取余，方便阅读
+    set_cursor(0);                      //设置光标的值
+    int cursor_pos = 0;
+    while( cursor_pos < 320 ) {         //为方便阅读，在输出异常信息之前先通过while循环清空4行内容，也就是填入4行空格，一行80个
+                                        //共320个空格
+        put_str(' ');
+        cursor_pos++;
+    }
+
+    set_cursor(0);                      //重置光标为屏幕左上角
+    put_str("!!!!    excetion message begin !!!!!! \n");
+    set_cursor(88);                     //从第二行第8个字符开始打印 
+    put_str(intr_name[vec_nr]);
+
+    if( vec_nr == 14 ) {            //若为Pagefault, 将缺失的地址打印出来并悬停
+        
+        int page_fault_vaddr = 0;
+        asm ("movl %%cr2, %0" : "=r"(page_fault_vaddr));    //cr2 是存放造成page_fault的地址 
+        put_str("\n page fault addr is "); put_str(page_fault_vaddr);
+
+    }
+
+    put_str("\n !!!!!! excetion message end  !!!!!\n");
+
+    //能进入中断处理程序就表示已经在关中断情况下 ,不会出现调度进程的情况。故下面的死循环不会再被中断 
+    
+    while(1);
 }
 
 
@@ -193,6 +217,15 @@ enum intr_status intr_get_status(){
 
     return (EFLAGS_IF & eflags) ? INTR_ON : INTR_OFF;
 }
+
+//在中断处理程序数组第 vector_no 个元素中，则侧安装中断处理程序 function 
+void register_handler(uint8_t vector_no, intr_handler function) {
+
+    //idt_table 数组中的函数实在进入中断后根据中断向量号调用的 
+    //kernel/kernel.S 的call[idt_table + %1*4] 
+    idt_table[vector_no] = function;
+}
+
 
 
 //完成有关中断的所有初始化工作

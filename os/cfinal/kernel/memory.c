@@ -50,7 +50,7 @@ static void* vaddr_get(enum pool_flags pf, uint32_t pg_cnt) {
 
     uint32_t cnt = 0;
     if(pf == PF_KERNEL){
-
+        //位图扫描函数  bitmap_scan 
         bit_idx_start = bitmap_scan(&kernel_vaddr.vaddr_bitmap, pg_cnt);
         if(bit_idx_start == -1) {
 
@@ -191,13 +191,13 @@ void* get_kernel_pages(uint32_t pg_cnt) {
     return vaddr;
 }
 
-//初始化内存池 
+//初始化内存池                      all_mem 物理内存总量
 static void mem_pool_init(uint32_t all_mem) {
 
     put_str("   mem_pool_init start\n");
+    //页表大小 = 1页的页目录表 + 第0和第768 个页目录项指向同一个页表 + 第769~1022个页目录项共指向254个页表, 共256个页框
     uint32_t page_table_size = PG_SIZE * 256;
 
-    //页表大小 = 1页的页目录表 + 第0和第768 个页目录项指向同一个页表 + 第769~1022个页目录项共指向254个页表, 共256个页框
     uint32_t used_mem = page_table_size + 0x100000;     //0x100000 为低端1MB内存
 
     uint32_t free_mem = all_mem - used_mem;
@@ -266,7 +266,7 @@ static void mem_pool_init(uint32_t all_mem) {
 void mem_init(){
 
     put_str("mem_init start\n");
-    uint32_t mem_bytes_total = (*(uint32_t*)(0xb00));
+    uint32_t mem_bytes_total = (*(uint32_t*)(0xb00));           //物理地址0xb00中存储的是物理内存的总量
     mem_pool_init(mem_bytes_total);             //初始化内存池
     put_str("mem init done\n");
 }

@@ -3,6 +3,7 @@
 
 #include "stdint.h"
 #include "bitmap.h"
+#include <stddef.h>
 
 //内存池标记,用于判断用那个内存池
 enum pool_flags {
