@@ -101,7 +101,7 @@ struct task_struct {
 
     //线程与进程的最大区别就是进程独享自己的地址空间，即进程有自己的页表，而线程共享所在进程的地址空间，即线程无页表
     //如果该任务为线程,pgdir 则为NULL,否则pgdir　会被赋予页表的虚拟地址，此处是虚拟地址，页表加载时还是要被转换成物理地址的 
-    uint32_t pgdir;                         //进程自己页表的虚拟地址,任务自己的页表
+    uint32_t* pgdir;                         //进程自己页表的虚拟地址,任务自己的页表
     uint32_t stack_magic;                   //栈的边界标记，用于检测栈的溢出
 
 };
@@ -113,6 +113,7 @@ struct task_struct* thread_start(char* name, int prio, thread_func function, voi
 struct task_struct* running_thread(void);
 void schedule(void);
 void thread_init(void);
-
+void thread_block(enum task_status stat);
+void thread_unblock(struct task_struct* pthread);
 
 #endif

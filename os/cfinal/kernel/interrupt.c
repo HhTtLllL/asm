@@ -106,7 +106,7 @@ static void general_intr_handler(uint8_t vec_nr) {
     int cursor_pos = 0;
     while( cursor_pos < 320 ) {         //为方便阅读，在输出异常信息之前先通过while循环清空4行内容，也就是填入4行空格，一行80个
                                         //共320个空格
-        put_str(' ');
+        put_char(' ');
         cursor_pos++;
     }
 
@@ -119,7 +119,7 @@ static void general_intr_handler(uint8_t vec_nr) {
         
         int page_fault_vaddr = 0;
         asm ("movl %%cr2, %0" : "=r"(page_fault_vaddr));    //cr2 是存放造成page_fault的地址 
-        put_str("\n page fault addr is "); put_str(page_fault_vaddr);
+        put_str("\n page fault addr is "); put_int(page_fault_vaddr);
 
     }
 

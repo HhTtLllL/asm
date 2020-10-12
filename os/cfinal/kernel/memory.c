@@ -123,11 +123,19 @@ static void page_table_add(void* _vaddr, void* _page_phyaddr) {
         //页目录项和页表项的第0位为p,此处判断目录项是否存在 
         ASSERT(!(*pte & 0x00000001));
         //只要是创建页表,pte就应该不存在,多判断也没事
-        *pte = (page_phyaddr | PG_US_U | PG_RW_W | PG_P_1);              //US = 1, RW = 1, P = 1 
-    }else {//目前应该不会执行到这,因为上面的ASSERT会先执行 
+        if(!(*pte & 0x00000001)) {
+            
+            *pte = (page_phyaddr | PG_US_U | PG_RW_W | PG_P_1);              //US = 1, RW = 1, P = 1 :w
+        }else {
+
+            PANIC("pte repeat");
+            *pte = (page_phyaddr | PG_US_U | PG_RW_W | PG_P_1);
+        }
+    }else {                     //页目录项不存在，所以要先创建页目录在创建页表项
+
+        uint32_t pde_phyaddr = (uint32_t)palloc(&kernel_pool);
         
-        PANIC("pte repeat");
-        *pte = (page_phyaddr | PG_US_U | PG_RW_W | PG_P_1);
+        *pde = (pde_phyaddr | PG_US_U | PG_RW_W | PG_P_1);
         /*分配到的物理页地址pde_phyaddr 对应的物理内存清0,避免里面陈旧数据变成了页表项,从而让页表混乱
          *访问到pde对应的物理地址,用pte取高20位便可. 因为pte基于该pde对应的物理地址内再寻址,把
          *低12位置0便是该pde对应的物理页的起始
