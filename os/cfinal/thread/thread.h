@@ -2,7 +2,7 @@
 #define __THREAD_THREAD_H 
 
 #include "stdint.h"
-
+#include "list.h"
 //自定义通用函数类型，它将在很多线程函数中作为形参类型
 typedef void thread_func(void*);
 
@@ -110,5 +110,9 @@ struct task_struct {
 void thread_create(struct task_struct* pthread, thread_func function, void* func_arg);
 void init_thread(struct task_struct* pthread, char* name, int prio);
 struct task_struct* thread_start(char* name, int prio, thread_func function, void* func_arg);
+struct task_struct* running_thread(void);
+void schedule(void);
+void thread_init(void);
+
 
 #endif

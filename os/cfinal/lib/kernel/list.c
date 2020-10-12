@@ -6,7 +6,7 @@
 // Description:
 ///////////////////////////////////////////////////////////////
 #include "list.h"
-#include "interrpt.h"
+#include "interrupt.h"
 #include <stddef.h>
 
 

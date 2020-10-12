@@ -11,6 +11,10 @@
 #include "string.h"
 #include "global.h"
 #include "memory.h"
+#include "debug.h"
+#include "interrupt.h"
+#include "print.h"
+#include "list.h"
 
 #define PG_SIZE 4096 
 
@@ -152,12 +156,25 @@ void schedule() {
 
     //将thread_ready_list 队列中的第一个就绪线程弹出，准备将其调度上CPU
     thread_tag = list_pop(&thread_ready_list);
+   // struct task_struct* next = elem2entry(struct task_struct, general_tag, thread_tag);
     struct task_struct* next = elem2entry(struct task_struct, general_tag, thread_tag);
     next->status = TASK_RUNNING;
     switch_to(cur, next);
 }
 
+//初始化线程环境
 
+void thread_init(void) {
+
+    put_str("thread_init start\n");
+
+    list_init(&thread_ready_list);
+    list_init(&thread_all_list);
+
+    //将当前main函数创建为线程 
+    make_main_thread();
+    put_str("thread_init done\n");
+}
 
 
 
