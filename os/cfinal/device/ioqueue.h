@@ -4,6 +4,7 @@
 #include "stdint.h"
 #include "../thread/thread.h"
 #include "../thread/sync.h"
+#include <stdbool.h> 
 
 #define bufsize 64
 
@@ -26,9 +27,9 @@ struct ioqueue {
     int32_t tail;                       //队尾，数据从队尾处读出 
 };
 
-
-
-
-
+void ioqueue_init(struct ioqueue* ioq);
+bool ioq_full(struct ioqueue* ioq);
+char ioq_getchar(struct ioqueue* ioq);
+void ioq_putchar(struct ioqueue* ioq, char byte);
 
 #endif
