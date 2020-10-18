@@ -166,7 +166,7 @@ static void intr_keyboard_handler(void) {
         return ;            //直接返回此次中断处理程序
     }
     //若为通码,只处理数组中定义的键一级alt_right和ctrl键，全是make_code 
-    else if ((scancode > 0x00 && scancode < 0xb3) || \
+    else if ((scancode > 0x00 && scancode < 0x3b) || \
              (scancode == alt_r_make) || \
              (scancode == ctrl_r_make)) {
 
@@ -230,18 +230,13 @@ static void intr_keyboard_handler(void) {
              * */
             if( !ioq_full(&kbd_buf) ) {
 
-                put_char(cur_char);
+     //           put_char(cur_char);
                 ioq_putchar(&kbd_buf, cur_char);
             }
 
 
             return ;
         }
-
-                
-
-
-
 
         //记录恩赐是否按下了下面积累控制键之1，共下次键入时判断组合键
         if(scancode == ctrl_l_make || scancode == ctrl_r_make) {

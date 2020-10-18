@@ -22,8 +22,8 @@ int main(void)
     put_str("I am kernel\n");
     init_all();
 
-    thread_start("comsumer_a", 31, k_thread_a, "A- ");
-    thread_start("comsumer_b", 31, k_thread_b, "B_ ");
+    thread_start("comsumer_a", 31, k_thread_a, " A_");
+    thread_start("comsumer_b", 31, k_thread_b, " B_");
     
     intr_enable();
 
