@@ -306,7 +306,7 @@ setup_page:
     mov ecx, 4096
     mov esi, 0
 .clear_pagr_dir:
-    mov byte [PAGE_DIR_TABLE_POS + esi], 0
+    mov byte [PAGE_DIR_TABLE_POS + esi], 0          ;PAGE_DIR_TABLE_POS 是页目录表的物理地址
     inc esi 
     loop .clear_pagr_dir          ;计数在ecx中
 
@@ -340,17 +340,18 @@ setup_page:
     mov edx, PG_US_U | PG_RW_W | PG_P   ;属性为7, US=1,RW=1,P=1  
 .create_pte:                            ;创建Page Table Entry 
     
-    mov [ebx + esi*4], edx  
+    mov [ebx + esi*4], edx              ;edx是屋里也的页表项  
 ;此时的ebx已经在上面通过eax赋值为0x101000,也就是第一个页表的地址
     add edx, 4096 
     inc esi 
     loop .create_pte 
 
 
-;创建内核其他页表的PDE 
+;创建内核其他页表的PDE(页目录项)
     
     mov eax, PAGE_DIR_TABLE_POS 
-    add eax, 0x2000                     ;此时eax为第二个页表的位置
+    add eax, 0x2000                     ;此时eax为第二个页表的位置,页目录项占了4k~(0x0000 - 0x1000),第一个页表项(0x1000 - 0x2000)
+                                        ;第二个页目录项从 0x2000 开始
     or eax, PG_US_U | PG_RW_W | PG_P    ;页目录项的属性US,RW,和P为都为1 
 
     mov ebx, PAGE_DIR_TABLE_POS   

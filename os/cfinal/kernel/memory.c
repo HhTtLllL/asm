@@ -88,7 +88,7 @@ static void* vaddr_get(enum pool_flags pf, uint32_t pg_cnt) {
     return (void*)vaddr_start;
 }
 
-//得到虚拟地址 vaddr 对应的pte指针
+//得到虚拟地址 vaddr 对应的pte指针,这个指针也是虚拟地址
 uint32_t* pte_ptr(uint32_t vaddr) {
 
     //先访问到页表自己 + 再用页目录项pde(页目录内页表的索引)作为pte的索引访问到页表 + 再用pte的索引页作为页内偏移
@@ -301,7 +301,7 @@ static void mem_pool_init(uint32_t all_mem) {
     kernel_pool.pool_size = kernel_free_pages * PG_SIZE;    //初始化各自内存池的 pool_size 
     user_pool.pool_size = user_free_pages * PG_SIZE;
 
-    kernel_pool.pool_bitmap.btmp_bytes_len = kbm_length;
+    kernel_pool.pool_bitmap.btmp_bytes_len = kbm_length;    //单位为字节
     user_pool.pool_bitmap.btmp_bytes_len = ubm_length;
     
 //内核内存池和用户内存池位图
@@ -349,7 +349,9 @@ static void mem_pool_init(uint32_t all_mem) {
 void mem_init(){
 
     put_str("mem_init start\n");
-    uint32_t mem_bytes_total = (*(uint32_t*)(0xb00));           //物理地址0xb00中存储的是物理内存的总量
-    mem_pool_init(mem_bytes_total);             //初始化内存池
+    //物理地址0xb00中存储的是物理内存的总量
+    //先把0xb00转换成３２位整型指针，再通过*对该指针做取值操作，获取内存容量
+    uint32_t mem_bytes_total = (*(uint32_t*)(0xb00));                   //物理地址0xb00中存储的是物理内存的总量
+    mem_pool_init(mem_bytes_total);                                     //初始化内存池
     put_str("mem init done\n");
 }

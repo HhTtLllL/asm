@@ -22,18 +22,20 @@ void bitmap_init(struct bitmap* btmp) {
 //判断bit_idx 位是否为1,若为1,则返回true, 否则返回false
 bool bitmap_scan_test(struct bitmap* btmp, uint32_t bit_idx) {
 
-    uint32_t byte_idx = bit_idx / 8;      //向下取整用于索引数组下标
-    uint32_t bit_odd = bit_idx % 8;     //取余用于索引数组内的位
+    uint32_t byte_idx = bit_idx / 8;            //向下取整用于索引数组下标
+    uint32_t bit_odd = bit_idx % 8;             //取余用于索引数组内的位
     
     return (btmp->bits[byte_idx] & (BITMAP_MASK << bit_odd));
 }
 
 //在位图中申请连续cnt个位,成功,则返回起始为下标,失败,返回1 
+//成功返回这一个位　的下标
 int bitmap_scan(struct bitmap* btmp, uint32_t cnt) {
 
-    uint32_t idx_byte = 0;              //用于记录空闲位所在的字节
+    uint32_t idx_byte = 0;              //用于记录第一个空闲位所在的字节的索引
     //先逐字节比较, 
-    //如果某一个字节值 为0xff, 则代表这个字节所有位都为1,
+    //如果某一个字节值 为0xff, 则代表这个字节所有位都为1,如果这个字节中的所有位都为１
+    //则开始判断下一个字节，直到有一个字节中出现了没有使用过的资源
     while((0xff == btmp->bits[idx_byte]) && (idx_byte < btmp->btmp_bytes_len)){
 
         idx_byte++;
