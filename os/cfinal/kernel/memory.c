@@ -83,7 +83,7 @@ static void* vaddr_get(enum pool_flags pf, uint32_t pg_cnt) {
         //(0xc00000000 - PG_SIZE)作为用户3级栈已经在start_process 被分配
         ASSERT((uint32_t)vaddr_start < (0xc0000000 - PG_SIZE));
 
-        return (void*)vaddr_start;
+        //return (void*)vaddr_start;
     }
 
     return (void*)vaddr_start;
@@ -145,7 +145,6 @@ static void page_table_add(void* _vaddr, void* _page_phyaddr) {
         }else {
 
             PANIC("pte repeat");
-            *pte = (page_phyaddr | PG_US_U | PG_RW_W | PG_P_1);
         }
     }else {                     //页目录项不存在，所以要先创建页目录在创建页表项
 
@@ -205,12 +204,15 @@ void* malloc_page(enum pool_flags pf, uint32_t pg_cnt) {
 
 //从内核物理内存池中申请1页内存成功则返回其虚拟地址,失败则返回NULL
 void* get_kernel_pages(uint32_t pg_cnt) {
-
+    
+    lock_acquire(&kernel_pool.lock);
     void* vaddr = malloc_page(PF_KERNEL, pg_cnt);
     if(vaddr != NULL) {                                     //若分配的地址不为空,将页框清0后返回
 
         memset(vaddr, 0, pg_cnt * PG_SIZE);
     }
+
+    lock_release(&kernel_pool.lock);
 
     return vaddr;
 }
@@ -333,6 +335,11 @@ static void mem_pool_init(uint32_t all_mem) {
     //将位图置0
     bitmap_init(&kernel_pool.pool_bitmap);
     bitmap_init(&user_pool.pool_bitmap);
+
+
+       
+    lock_init(&kernel_pool.lock);
+    lock_init(&user_pool.lock);
 
     //下面初始化内核虚拟地址的位图,按实际物理内存大小生成数组 
     kernel_vaddr.vaddr_bitmap.btmp_bytes_len = kbm_length;
