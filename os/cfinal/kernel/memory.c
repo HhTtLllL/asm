@@ -1,4 +1,4 @@
-///////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 // File Name: memory.c
 // Author: tt
 // Email: tttt@xiyoulinux.org
@@ -14,6 +14,7 @@
 #include "debug.h"
 #include "string.h"
 #include "../thread/thread.h"
+#include "sync.h"
 
 #define PG_SIZE 4096                //即 4KB
 
@@ -66,7 +67,7 @@ static void* vaddr_get(enum pool_flags pf, uint32_t pg_cnt) {
             bitmap_set(&kernel_vaddr.vaddr_bitmap, bit_idx_start + cnt++, 1);
         }
 
-        //转化为虚拟地址
+        //转化为虚拟地址,就是虚拟内存池的起始地址kernel_vaddr.vaddr_start 加上起始位索引bit_idx_start相对于内存池的虚拟页偏移地址
         vaddr_start = kernel_vaddr.vaddr_start + bit_idx_start * PG_SIZE;
     }else {
 
@@ -80,7 +81,7 @@ static void* vaddr_get(enum pool_flags pf, uint32_t pg_cnt) {
         }
         vaddr_start = cur->userprog_vaddr.vaddr_start + bit_idx_start * PG_SIZE;
         //(0xc00000000 - PG_SIZE)作为用户3级栈已经在start_process 被分配
-        ASSERT((uint32_t)vaddr_start < (0xc00000000 - PG_SIZE));
+        ASSERT((uint32_t)vaddr_start < (0xc0000000 - PG_SIZE));
 
         return (void*)vaddr_start;
     }
@@ -240,7 +241,7 @@ void* get_a_page(enum pool_flags pf, uint32_t vaddr) {
 
         bit_idx = (vaddr - cur->userprog_vaddr.vaddr_start) / PG_SIZE;
         ASSERT(bit_idx > 0);
-        bitmap_set(&cur->userprog_vaddr.vaddr_map, bit_idx, 1);
+        bitmap_set(&cur->userprog_vaddr.vaddr_bitmap, bit_idx, 1);
     }else if(cur->pgdir == NULL && pf == PF_KERNEL) {
 
         //如果是内核线程申请内核内存，就修改kernel_vaddr
@@ -267,7 +268,7 @@ void* get_a_page(enum pool_flags pf, uint32_t vaddr) {
 //得到虚拟地址映射到的物理地址
 uint32_t addr_v2p(uint32_t vaddr) {
 
-    uint32_t pte = pte_ptr(vaddr);
+    uint32_t* pte = pte_ptr(vaddr);
     //(*pte)的值是页表所在的物理页框地址
     //去掉其低12为的页表属性 +属性地址 vaddr 的低12位
     

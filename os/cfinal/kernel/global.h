@@ -42,7 +42,7 @@
 //第三个段描述符是显存，第4个是tss
 
 #define SELECTOR_U_CODE     ((5 << 3) + (TI_GDT << 2) + RPL3)
-#define SELECTOR_U_DATA     ((6 << 3) + (TI_GDT) << 2 + RPL3)
+#define SELECTOR_U_DATA     ((6 << 3) + (TI_GDT << 2) + RPL3)
 #define SELECTOR_U_STACK    SELECTOR_U_DATA
 
 #define GDT_ATTR_HIGH       \
@@ -128,6 +128,7 @@ struct gdt_desc {
 #define EFLAGS_IOPL_0	(0 << 12)	// IOPL0
 
 #define NULL ((void*)0)
+#define DIV_ROUND_UP(X, STEP)((X + STEP - 1) / (STEP))
 #define bool int
 #define true 1
 #define false 0

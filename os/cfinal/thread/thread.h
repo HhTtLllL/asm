@@ -3,6 +3,9 @@
 
 #include "stdint.h"
 #include "list.h"
+#include "bitmap.h"
+#include "memory.h"
+
 //自定义通用函数类型，它将在很多线程函数中作为形参类型
 typedef void thread_func(void*);
 
@@ -107,6 +110,9 @@ struct task_struct {
 
 };
 
+
+extern struct list thread_ready_list;
+extern struct list thread_all_list;
 
 void thread_create(struct task_struct* pthread, thread_func function, void* func_arg);
 void init_thread(struct task_struct* pthread, char* name, int prio);
