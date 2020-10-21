@@ -11,12 +11,20 @@
 #include "stdint.h"
 #include "../lib/kernel/print.h"
 #include "../thread/thread.h"
-
+#include "../device/console.h"
+#include "string.h"
 
 #define syscall_nr 32
 typedef void* syscall;
 
 syscall syscall_table[syscall_nr];
+
+uint32_t sys_write(char* str) {
+
+    console_put_str(str);
+
+    return strlen(str);
+}
 
 //返回当前任务的pid 
 uint32_t sys_getpid(void) {
@@ -30,6 +38,7 @@ void syscall_init(void) {
     put_str("syscall_init start\n");
     
     syscall_table[SYS_GETPID] = sys_getpid;
+    syscall_table[SYS_WRITE] = sys_write;
 
     put_str("syscall_init done\n");
 }
