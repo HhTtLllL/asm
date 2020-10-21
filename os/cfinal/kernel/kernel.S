@@ -108,3 +108,45 @@ VECTOR 0x2c, ZERO                           ;ps/2鼠标
 VECTOR 0x2d, ZERO                           ;fpu浮点单元异常
 VECTOR 0x2e, ZERO                           ;硬盘
 VECTOR 0x2f, ZERO                           ;保留
+
+
+;;;;;;;;     0x80 中断 ;;;;;;;;;;;;;;;;;;;;;;
+[bits 32]
+
+extern syscall_table                        ;数组，数组成员是系统调用中子功能对应的处理函数，
+                                            ;这里我们用子功能号在此数组中索引子功能号对应的处理函数
+section .text 
+global syscall_handler 
+
+syscall_handler:                            ;中断例程
+    ;1 保存上下文环境
+    push 0                                  ;压入0,(错误码),为了保证栈中格式统一
+                                            ;保存任务上下文
+    push ds
+    push es
+    push fs
+    push gs 
+    pushad                                  ;pushad 指令压入32位寄存器，其入栈顺序是 eax,ecx,edx,ebx,esp,ebp,esi,edi 
+
+
+    push 0x80                               ;此位置压入0x80 也是为了保持统一的栈格式, 中断号
+
+    ;2 为系统调用子功能传入参数,c调用约定，最右边的参数先入栈
+    push edx                                ;第三个参数
+    push ecx                                ;第二个参数
+    push ebx                                ;第一个参数
+
+    ;3 调用子功能处理函数   
+    call [syscall_table + eax*4]            ;syscall_table 存储的是函数的地址，大小为4字节
+
+    add esp, 12                             ;跨过上面的3个参数
+    ;4 将call 调用后的返回值存入当前内核栈中eax 的位置
+    mov [esp + 8*4], eax    
+    jmp intr_exit                           ;intr_exit 返回，恢复上下文
+
+
+
+
+
+
+

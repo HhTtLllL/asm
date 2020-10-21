@@ -138,6 +138,7 @@ void process_execute(void* filename, char* name) {
     struct task_struct* thread = get_kernel_pages(1);
 
     init_thread(thread, name, default_prio);
+//    thread->pid = 3;
     create_user_vaddr_bitmap(thread);
     thread_create(thread, start_process, filename);
     thread->pgdir = create_page_dir();

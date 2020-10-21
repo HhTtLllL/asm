@@ -16,9 +16,11 @@
 #include "print.h"
 #include "list.h"
 #include "../userprog/process.h"
+#include "sync.h"
 
 #define PG_SIZE 4096 
 
+struct lock pid_lock;
 struct task_struct* main_thread;                    //主线程PCB 
 struct list thread_ready_list;                      //就绪队列,就绪队列中的线程都是可用于直接上处理器运行的，阻塞的线程是不放在就绪队列中的
 struct list thread_all_list;                        //所有任务队列,全部线程队列 
@@ -35,6 +37,19 @@ struct task_struct* running_thread() {
     //各个线程所用的0级栈都是在自己的PCB当中，因此取当前栈指针的高20位作为当前运行线程PCB。
     return (struct task_struct*)(esp & 0xfffff000);
 }
+
+//分配pid 
+static pid_t allocate_pid(void) {
+
+    static pid_t next_pid = 0;              //全局静态变量
+    lock_acquire(&pid_lock);
+    next_pid++;
+    lock_release(&pid_lock);
+
+    return next_pid;
+}
+
+
 
 //由kernel_thread 去执行 function(func_arg) 
 static void kernel_thread(thread_func* function, void* func_arg) {
@@ -70,6 +85,8 @@ void init_thread(struct task_struct* pthread, char* name, int prio) {
     
     //将所在的页清零 
     memset(pthread, 0 ,sizeof(*pthread));
+    put_str("getpid\n");
+    pthread->pid = allocate_pid();              //获取pid 
     strcpy(pthread->name, name); 
 
     if( pthread == main_thread ) {
@@ -213,7 +230,7 @@ void thread_init(void) {
 
     list_init(&thread_ready_list);
     list_init(&thread_all_list);
-
+    lock_init(&pid_lock);
     //将当前main函数创建为线程 
     make_main_thread();
     put_str("thread_init done\n");
