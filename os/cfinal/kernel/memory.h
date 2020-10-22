@@ -2,8 +2,9 @@
 #define __KERNEL_MEMORY_H 
 
 #include "stdint.h"
-#include "bitmap.h"
+#include "../lib/kernel/bitmap.h"
 #include <stddef.h>
+#include "../lib/kernel/list.h"
 
 //内存池标记,用于判断用那个内存池
 enum pool_flags {
@@ -19,6 +20,7 @@ enum pool_flags {
 #define PG_US_S 0           //U/S 属性位值,系统级 US=0  ,表示只允许特权级别为0,1,2的程序访问此页内存
 #define PG_US_U 4           //U/S 属性位值,用户级       ,表示允许所有特权级别的程序访问此页内存
 
+#define DESC_CNT 7          //内存块描述符个数
 
 //虚拟地址池, 用于虚拟地址管理
 struct virtual_addr {
@@ -26,6 +28,21 @@ struct virtual_addr {
     struct bitmap vaddr_bitmap;             //虚拟地址用到的位图结构
     uint32_t vaddr_start;                   //虚拟地址起始地址
 };
+
+//内存块
+struct mem_block {
+    
+    struct list_elem free_elem;             //链表成员节点
+};
+
+//内存快描述符
+struct mem_block_desc {
+
+    uint32_t block_size;                    //内存块大小
+    uint32_t blocks_per_arena;              //本arena中可容纳此mem_block 的数量
+    struct list free_list;                  //目前可用mem_block链表
+};
+
 
 extern struct pool kernel_pool, user_pool;
 void mem_init(void);
@@ -40,6 +57,11 @@ uint32_t addr_v2p(uint32_t vaddr);
 void* get_a_page(enum pool_flags pf, uint32_t vaddr);
 void* get_user_pages(uint32_t pg_cnt);
 
+void block_desc_init(struct mem_block_desc* desc_array);
+void* sys_malloc(uint32_t size);
+void mfree_page(enum pool_flags pf, void* _vaddr, uint32_t pg_cnt);
+void pfree(uint32_t pg_phy_addr);
+void sys_free(void* ptr);
 
 
 #endif
