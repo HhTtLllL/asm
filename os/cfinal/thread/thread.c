@@ -137,7 +137,6 @@ static void make_main_thread(void) {
 
     //因为main线程早已运行,在loader.S 中进入内核时的 mov esp, 0xc009f000,就是为其预留pcb的，因此pcb地址为0xc009e000 
     //不需要通过 get_kernel_pages 另分配一页 
-    
     main_thread = running_thread();
     init_thread(main_thread, "main", 31);
 
@@ -188,7 +187,6 @@ void schedule() {
 void thread_block(enum task_status stat) {
 
     //stat 取值为 TASK_BLOCK, TASK_WAITING, TASK_HANGING ,只有这三种状态不会被调度
-    
     ASSERT(((stat == TASK_BLOCKED) || (stat == TASK_WAITING) || (stat == TASK_HANGING)));
 
     enum intr_status old_status = intr_disable();
@@ -223,7 +221,6 @@ void thread_unblock(struct task_struct* pthread) {
 }
 
 //初始化线程环境
-
 void thread_init(void) {
 
     put_str("thread_init start\n");
