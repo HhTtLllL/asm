@@ -13,7 +13,6 @@
 #include "interrupt.h"
 #include "debug.h"
 
-
 #define IRQ0_FREQUENCY      100
 #define INPUT_FREQUENCY     1193180 
 #define COUNTER0_VALUE      INPUT_FREQUENCY / IRQ0_FREQUENCY 
@@ -22,8 +21,39 @@
 #define COUNTER_MODE        2
 #define READ_WRITE_LATCH    3
 #define PIT_CONTROL_PORT    0x43
+#define mil_seconds_per_intr (1000 / IRQ0_FREQUENCY)                //多少毫秒发生一次中断,也就是以毫秒计算的中断周期,一个中断周期是10毫秒
 
 uint32_t ticks;                     //ticks 是内核自中断开启以来总共的滴答数
+
+/*以 tick 为单位的sleep,任何时间形式的sleep会转换此 ticks 形式
+ *中断发生的次数ticks,即滴答数
+
+ 功能:让任务休眠sleep_ticks个ticks 
+ * */
+static void ticks_to_sleep(uint32_t sleep_ticks) {
+
+    uint32_t start_tick = ticks;
+
+    /*若间隔的 ticks 数不够便让出cpu*/ 
+    while(ticks - start_tick < sleep_ticks) {
+        
+        //让出 CPU
+        thread_yield();
+    }
+}
+
+/*以毫秒为单位的sleep 1秒 = 1000毫秒 
+ *使程序休眠m_seconds 毫秒,此函数按照毫秒来休眠 */ 
+void mtime_sleep(uint32_t m_seconds) {
+
+    uint32_t sleep_ticks = DIV_ROUND_UP(m_seconds, mil_seconds_per_intr);
+
+    ASSERT(sleep_ticks > 0);
+
+    ticks_to_sleep(sleep_ticks);
+}
+
+
 
 /*把操作的计数器 counter_no, 读写锁属性rwl, 计数器模式,counter_mode 写入模式控制寄存器并赋予初始值count_value*/
 static void frequency_set(uint8_t counter_port, 
@@ -74,30 +104,5 @@ void timer_init() {     //timer_inti 在init_all 调用的，它在内核运行�
     register_handler(0x20, intr_timer_handler);
     put_str("timer_init done\n");
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
