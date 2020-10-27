@@ -4,7 +4,7 @@
 #include "stdint.h"
 #include "../thread/sync.h"
 #include "../lib/kernel/bitmap.h"
-
+#include "../lib/kernel/list.h"
 
 //分区结构
 struct partition {
@@ -58,5 +58,8 @@ struct ide_channel {
 void ide_init(void);
 extern uint8_t channel_cnt;
 extern struct ide_channel channels[];
+void intr_hd_handler(uint8_t irq_no);
+void ide_read(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt);
+void ide_write(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt);
 
 #endif
