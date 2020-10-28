@@ -17,7 +17,69 @@
 #include "../kernel/memory.h"
 #include "../kernel/global.h"
 #include "../lib/kernel/list.h"
+#include "stdint.h"
 
+struct partition* cur_part;                                 //默认情况下操作的是那个分区
+
+/*在分区链表中找到名为part_name 的分区,并将其指针赋值给cur_part*/
+static bool mount_partition(struct list_elem* pelem, int arg) {
+
+    char* part_name = (char*)arg;                           //获取分区名
+
+    struct partition* part = elem2entry(struct partition, part_tag, pelem);
+    if(!strcmp(part->name, part_name)) {
+
+        cur_part = part;
+        struct disk* hd = cur_part->my_disk;
+        /*sb_buf 用来存储从硬盘上读入的超级块*/
+        struct super_block* sb_buf = \
+        (struct super_block*)sys_malloc(SECTOR_SIZE);
+
+        /*在内存中创建分区cur_part的超级块*/
+        cur_part->sb = (struct super_block*)sys_malloc(sizeof(struct super_block));
+        if(cur_part->sb == NULL) {
+
+            PANIC("alloc memory failed!");
+        }
+        /*读入超级块*/
+        memset(sb_buf, 0, SECTOR_SIZE);
+        ide_read(hd, cur_part->start_lba + 1, sb_buf, 1);
+
+        /*把sb_buf 中超级块的信息赋值到超级块 sb 中*/
+        memcpy(cur_part->sb, sb_buf, sizeof(struct super_block));
+
+        /*                将硬盘上的块位图读入到内存中                     */
+        cur_part->block_bitmap.bits = (uint8_t*)sys_malloc(sb_buf->block_bitmap_sects * SECTOR_SIZE);
+        if(cur_part->block_bitmap.bits == NULL) {
+
+            PANIC("alloc memory failed!");
+        }
+
+        cur_part->block_bitmap.btmp_bytes_len = sb_buf->block_bitmap_sects * SECTOR_SIZE;
+
+        /*从硬盘上读入块位图到分区的block_bitmap_bits */
+        ide_read(hd, sb_buf->block_bitmap_lba, cur_part->block_bitmap.bits, sb_buf->block_bitmap_sects);
+        
+        /*将硬盘上的inode位图存入到内存*/
+        cur_part->inode_bitmap.bits = (uint8_t*)sys_malloc(sb_buf->inode_bitmap_sects * SECTOR_SIZE);
+        if(cur_part->inode_bitmap.bits == NULL) {
+
+            PANIC("alloc memory failed!");
+        }
+
+        cur_part->inode_bitmap.btmp_bytes_len = sb_buf->inode_bitmap_sects * SECTOR_SIZE;
+        /*从硬盘上读入inode位图到分区的inode_bitmaps.bits*/
+        ide_read(hd, sb_buf->inode_table_lba, cur_part->inode_bitmap.bits, sb_buf->inode_bitmap_sects);
+
+        list_init(&cur_part->open_inodes);
+        printk("mount %s done!\n", part->name);
+
+
+        return true;
+    }
+
+    return false;
+}
 
 /*
  *参数: part 待创建文件系统的分区->part
@@ -48,7 +110,7 @@ static void partition_format(struct partition* part) {
     sb.magic = 0x19590318;
     sb.sec_cnt = part->sec_cnt;                                         //分区的总扇区数
     sb.inode_cnt = MAX_FILES_PER_PART;                                  //本分区的inode的数量
-    sb.part_lba_base = part->start_lba;                                 //本分区的起始lba地址o:w
+    sb.part_lba_base = part->start_lba;                                 //本分区的起始lba地址
     
     sb.block_bitmap_lba = sb.part_lba_base + 2;                         //第0块是引导块,第 1 块是超级块
     sb.block_bitmap_sects = block_bitmap_sects;                         //扇区位图本身占用的扇区数量
@@ -72,7 +134,7 @@ static void partition_format(struct partition* part) {
            sb.inode_bitmap_sects, sb.inode_table_lba, sb.inode_table_sects, sb.data_start_lba);
 
 
-    struct disk* hd = part->my_disk;                                    //获取属于自己的硬盘
+    struct disk* hd = part->my_disk;                                    //获取属于自己的硬盘,这个分区在那个硬盘上
 
     /*1 将超级块写入本分区的第一个扇区*/
     ide_write(hd, part->start_lba + 1, &sb, 1);                         //第0块是引导扇区的地方,所以这里跨过引导扇区
@@ -95,9 +157,9 @@ static void partition_format(struct partition* part) {
     buf[0] |= 0x01;                                                     //第0个块预留给根目录,位图先占位,将空闲块位图中的第0为置1
     uint32_t block_bitmap_last_byte = block_bitmap_bit_len / 8;           
     uint8_t block_bitmap_last_bit = block_bitmap_bit_len % 8;           //多余的位
+    //last_size 是位图所在最后一个扇区中,不足一扇区的其余部分
     uint32_t last_size = SECTOR_SIZE - (block_bitmap_last_byte % SECTOR_SIZE);
 
-    //last_size 是位图所在最后一个扇区中,不足一扇区的其余部分
     /*1 先将位图最后1字节到其所在的扇区的结束全置为1,即超出实际块数的部分直接置为己占用*/
     memset(&buf[block_bitmap_last_byte], 0xff, last_size);
 
@@ -218,25 +280,10 @@ void filesys_init() {
         channel_no++;                               //下一通道
     }
     sys_free(sb_buf);
+    
+    /*确定默认操作的分区*/
+    char default_part[8] = "sdb1";
+    /*挂载分区*/
+    list_traversal(&partition_list, mount_partition, (int)default_part);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

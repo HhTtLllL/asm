@@ -3,12 +3,11 @@
 
 #include "stdint.h"
 
-/*超级块*/
-
+/*超级块 ---每一个分区一个超级块*/
 struct super_block {
 
     uint32_t magic;                 //魔数
-    uint32_t sec_cnt;               //分区的总扇区数
+    uint32_t sec_cnt;               //分区的总扇区数     --这里一个扇区等于一个块
     uint32_t inode_cnt;             //本分区中inode的数量
     uint32_t part_lba_base;         //本分区的起始lba地址
 

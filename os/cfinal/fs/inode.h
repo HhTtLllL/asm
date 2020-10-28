@@ -7,7 +7,7 @@
 /*inode 结构*/
 struct inode {
     
-    uint32_t i_no;                  //inode 数组中的下标
+    uint32_t i_no;                  //inode 数组中的下标,此inode的序号
 
     /*当此inode是文件时,i_size是指文件大小, 若此inode是目录,i_size是指该目录下所有目录项大小之和*/
     uint32_t i_size;                

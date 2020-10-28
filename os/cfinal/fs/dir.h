@@ -13,12 +13,18 @@
 /*目录结构*/
 struct dir {
 
-    struct inode* inode;
+    struct inode* inode;                //用于指向内存中inode,该inode必然是在已经打开的inode队列
     uint32_t dir_pos;                   //记录在目录内的偏移
     uint8_t dir_buf[512];               //目录的数据缓存
 };
 
-/*目录项结构*/
+/* 通过文件名找文件实体数据块的流程是
+ *1. 在目录中找到文件名所在的目录项
+ *2. 从目录项中获得inode编号
+ *3. 用inode编号作为inode数组(inode_table)的索引下标,找到inode
+ *4. 从该inode中获取数据块的地址,读取数据块
+ */
+/*目录项结构  关联文件名与inode */
 struct dir_entry {
     
     char filename[MAX_FILE_NAME_LEN];   //普通文件或目录名称
