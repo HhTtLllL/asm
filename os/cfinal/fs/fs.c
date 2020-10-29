@@ -219,6 +219,58 @@ static void partition_format(struct partition* part) {
     sys_free(buf);
 }
 
+/*将最上层的路径名称解析出来
+ *1. 字符串形式的路径及文件名
+ *2. 主调函数提供的缓冲区,用于存储最上层路径名
+ *
+ * 调用结束后,返回除顶层路径之外的自路径字符串的地址
+ * 
+ * */
+static char* path_parse(char* pathname, char* name_store) {
+
+    if(pathname[0] == '/') {                                //根目录不需要单独解析
+
+        /*路径中出现1个或多个连续的字符 '/', 将这些'/'跳过,如: ///a/b */
+        while(*(++pathname) == '/');
+    }
+
+
+    /*开始一般的路径解析*/
+    while(*pathname != '/' && *pathname != 0) {
+
+        *name_store++ = *pathname++;
+    }
+
+    if(pathname[0] == 0) {                                  //若路径字符串为空,则返回NULL
+
+        return NULL;
+    }
+
+    return pathname;
+}
+
+/*返回路径深度, 比如: a/b/c 深度为3 */
+int32_t path_depth_cnt(char* pathname) {
+
+    ASSERT(pathname != NULL);
+
+    char* p = pathname;
+    char name[MAX_FILE_NAME_LEN];                           //用于path_parse的参数做路径解析
+
+    uint32_t depth = 0;
+
+    /*解析路径,从中拆分出各级名称*/
+    p = path_parse(p, name);
+    while(name[0]) {
+
+        depth++;
+        memcmp(name, 0, MAX_FILE_NAME_LEN);
+        if(p) p = path_parse(p, name);
+    }
+
+    return depth;
+}
+
 /*在磁盘上搜索文件系统,若没有则格式化分区创建文件系统*/
 void filesys_init() {
 
