@@ -13,6 +13,9 @@
 #include "../device/ide.h"
 #include "super_block.h"
 #include "fs.h"
+#include "inode.h"
+#include "dir.h"
+#include "../lib/string.h"
 
 #define DEFAULT_SECS 1
 
@@ -118,6 +121,108 @@ void bitmap_sync(struct partition* part, uint32_t bit_idx, uint8_t btmp) {
     ide_write(part->my_disk, sec_lba, bitmap_off, 1);
 }
 
+/*创建文件,若成功则返回文件描述符,否则返回-1
+ *
+ * 在目录parent_dir 中以模式flag 去创建普通文件filename,成功则返回文件描述符
+ * */
+int32_t file_create(struct dir* parent_dir, char* filename, uint8_t flag) {
 
+    /*后续操作的公共缓冲区*/
+    void* io_buf = sys_malloc(1024);
+    if(NULL == io_buf) {
+
+        printk("in file_creat: sys_malloc for io_buf failed\n");
+        return -1;
+    }
+
+    uint8_t rollback_step = 0;                                          //用于操作失败时回滚各种资源状态
+
+    /*为新文件分配 inode*/
+    int32_t inode_no = inode_bitmap_alloc(cur_part);
+    if(-1 == inode_no) {
+
+        printk("in file_creat: allocate inode faild\n");
+        return -1;
+    }
+
+
+    /*此inode要存堆中申请内存, 不可以生成局部变量, 因为file_table数组中的文件描述符的inode指针要指向它*/
+    struct inode* new_file_inode = (struct inode*)sys_malloc(sizeof(struct inode));
+    if(NULL == new_file_inode) {
+
+        printk("file_create: sys_malloc for inode failed\n");
+        rollback_step = 1;
+        goto rollback;
+    }
+    inode_init(inode_no, new_file_inode);
+
+    /*返回的是file_table 的下标*/
+    int fd_idx = get_free_slot_in_global();
+    if(-1 == fd_idx) {
+
+        printk("exceed max open files\n");
+        rollback_step = 2;
+        goto rollback;
+    }
+
+    file_table[fd_idx].fd_inode = new_file_inode;
+    file_table[fd_idx].fd_pos = 0;
+    file_table[fd_idx].fd_flag = flag;
+    file_table[fd_idx].fd_inode->write_deny = false;
+
+    struct dir_entry new_dir_entry;
+    memset(&new_dir_entry, 0, sizeof(struct dir_entry));
+
+    create_dir_entry(filename, inode_no, FT_REGULAR, &new_dir_entry);
+    //create_dir_entry 只是内存操作不出以外,不会返回失败
+    
+    /*同步内存数据到硬盘*/
+    /*a 在目录parent_dir 下安装目录new_dir_entry,写入硬盘后返回true, 否则false*/
+    if(!sync_dir_entry(parent_dir, &new_dir_entry, io_buf)) {
+
+        printk("sync dir_entry to disk filed\n");
+        rollback_step = 3;
+        goto rollback;
+    }
+    
+    memset(io_buf, 0, 1024);                                      
+    /*b 将父目录 i 结点的内容同步到硬盘*/
+    inode_sync(cur_part, parent_dir->inode, io_buf);
+    
+    memset(io_buf, 0, 1024);
+    /*c 将新创建的文件的 i节点内容同步到硬盘上*/
+    inode_sync(cur_part, new_file_inode, io_buf);
+
+    /*d 将inode_bitmap位图同步到硬盘*/
+    bitmap_sync(cur_part, inode_no, INODE_BITMAP);
+
+    /*e 将创建的文件添加到 open_inodes 链表*/
+    list_push(&cur_part->open_inodes, &new_file_inode->inode_tag);
+    new_file_inode->i_open_cnts = 1;
+
+    sys_free(io_buf);
+
+    return pcb_fd_install(fd_idx);
+    
+
+/*创建文件需要创建相关的多个资源,若某一步失败则会执行到下面的回滚步骤*/
+rollback:
+    switch(rollback_step) {
+
+    case 3:
+        /*失败时,将file_table 中的相应位清空*/
+        memset(&file_table[fd_idx], 0, sizeof(struct file));
+    case 2:
+        sys_free(new_file_inode);
+    
+    case 1:
+        /*如果新文件的i 节点创建失败,之前位图中分配的 inode_no 也要恢复*/
+        bitmap_set(&cur_part->inode_bitmap, inode_no, 0);
+        break;
+    }
+    sys_free(io_buf);
+
+    return -1;
+}
 
 

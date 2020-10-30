@@ -3,15 +3,14 @@
 
 #include "stdint.h"
 #include "../lib/kernel/list.h"
+#include "../device/ide.h"
 
 /*inode 结构*/
 struct inode {
     
     uint32_t i_no;                  //inode 数组中的下标,此inode的序号
-
     /*当此inode是文件时,i_size是指文件大小, 若此inode是目录,i_size是指该目录下所有目录项大小之和*/
     uint32_t i_size;                
-
     uint32_t i_open_cnts;           //记录此文件被打开的次数
     bool write_deny;                //写文件不能并行,进程写文件前检查此标识
 
