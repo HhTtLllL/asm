@@ -6,6 +6,9 @@
 #include "../lib/kernel/bitmap.h"
 #include "../kernel/memory.h"
 
+
+#define MAX_FILES_OPEN_PER_PROC 8
+
 //自定义通用函数类型，它将在很多线程函数中作为形参类型
 typedef void thread_func(void*);
 typedef int16_t pid_t;
@@ -93,7 +96,8 @@ struct task_struct {
     //此任务自从上CPU运行后至今占用了多少CPU滴答数，也就是此任务执行了多久
     //用来记录任务在处理器上运行的时钟滴答数,从开始执行到结束执行　
     uint32_t elapsed_ticks;
-
+    
+    int32_t fd_table[MAX_FILES_OPEN_PER_PROC];                      //文件描述符数组
     //general_tag  的作用是用于线程在一般的队列中的节点
     //线程的标签，当线程被加入到就绪队列thread_ready_list 或其他等待队列中，就把该线程PCB中的general_tag的地址加入队列
     struct list_elem general_tag; 
@@ -123,5 +127,6 @@ void schedule(void);
 void thread_init(void);
 void thread_block(enum task_status stat);
 void thread_unblock(struct task_struct* pthread);
+void thread_yield(void);
 
 #endif

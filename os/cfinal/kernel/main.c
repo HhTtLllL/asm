@@ -17,7 +17,8 @@
 #include "syscall.h"
 #include "syscall-init.h"
 #include "stdio.h"
-
+#include "../fs/fs.h"
+#include "../lib/string.h"
 
 void k_thread_a(void*);
 void k_thread_b(void*);
@@ -27,25 +28,68 @@ void u_prog_b(void);
 
 int prog_a_pid = 0, prog_b_pid = 0;
 //int test_var_a = 0, test_var_b = 0;
+int main(void) {
+   put_str("I am kernel\n");
+   init_all();
+/*   process_execute(u_prog_a, "u_prog_a");
+   process_execute(u_prog_b, "u_prog_b");
+   thread_start("k_thread_a", 31, k_thread_a, "I am thread_a");
+   thread_start("k_thread_b", 31, k_thread_b, "I am thread_b");
+*/
+  /* uint32_t fd = sys_open("/file2", O_RDWR);
+   printf("open /file2, fd:%d\n", fd);
+   char buf[64] = {0};
+   int read_bytes = sys_read(fd, buf, 18);
+   printf("1_ read %d bytes:\n%s\n", read_bytes, buf);
 
+   memset(buf, 0, 64);
+   read_bytes = sys_read(fd, buf, 6);
+   printf("2_ read %d bytes:\n%s", read_bytes, buf);
+
+   memset(buf, 0, 64);
+   read_bytes = sys_read(fd, buf, 6);
+   printf("3_ read %d bytes:\n%s", read_bytes, buf);
+
+   printf("________  close file1 and reopen  ________\n");
+   sys_lseek(fd, 0, SEEK_SET);
+   memset(buf, 0, 64);
+   read_bytes = sys_read(fd, buf, 24);
+   printf("4_ read %d bytes:\n%s", read_bytes, buf);
+
+   sys_close(fd);*/
+
+   printf("/file2delete %s!\n", sys_unlink("/file2") == 0 ? "done" : "fail");
+   while(1);
+   return 0;
+}
+
+
+#if 0
 int main(void)
 {
     put_str("I am kernel\n");
     init_all();
 
-    intr_enable();
+//    intr_enable();
 
-    process_execute(u_prog_a, "user_prog_a");
-    process_execute(u_prog_b, "user_prog_b");
+ //   process_execute(u_prog_a, "user_prog_a");
+   // process_execute(u_prog_b, "user_prog_b");
 
 
 /*    console_put_str(" main_pid:0x");
     console_put_int(sys_getpid());
     console_put_char('\n');
 */
-    thread_start("comsumer_a", 31, k_thread_a, "i am thread_a");
-    thread_start("comsumer_b", 31, k_thread_b, "i am thread_b");
-    
+    //thread_start("comsumer_a", 31, k_thread_a, "i am thread_a");
+    //thread_start("comsumer_b", 31, k_thread_b, "i am thread_b");
+  
+    uint32_t fd = sys_open("/file2", O_RDWR);
+    printf("fd:%d\n", fd);
+
+    sys_write(fd, "hello, world\n", 12);
+    sys_close(fd);
+
+    printf("%d close now\n", fd);
     while(1);
 
   /*  while(1){
@@ -56,6 +100,7 @@ int main(void)
     return 0;
 }
 
+#endif 
 /* 在线程中运行的函数 */
 void k_thread_a(void* arg) {     
    void* addr1 = sys_malloc(256);

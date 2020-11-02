@@ -102,7 +102,7 @@ uint32_t sprintf(char* buf, const char* format, ...) {
 
     return retval;
 }
-
+/*
 //格式化输出字符串
 uint32_t printf(const char* format, ...) {
 
@@ -114,4 +114,16 @@ uint32_t printf(const char* format, ...) {
     va_end(args);
 
     return write(buf);
+}*/
+//格式化输出字符串
+uint32_t printf(const char* format, ...) {
+
+    va_list args;
+    va_start(args, format);                 //使args指向format 
+    char buf[1024] = {0};                   //用于存储拼接后的字符串
+
+    vsprintf(buf, format, args);        
+    va_end(args);
+
+    return write(1, buf, strlen(buf));
 }

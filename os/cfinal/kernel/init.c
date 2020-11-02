@@ -16,6 +16,8 @@
 #include "keyboard.h"
 #include "../userprog/tss.h"
 #include "../userprog/syscall-init.h"
+#include "../device/ide.h"
+#include "../fs/fs.h"
 
 //负责初始化所有模块
 void init_all(){
@@ -29,6 +31,11 @@ void init_all(){
     keyboard_init();                //键盘初始化
     tss_init();                     //tss 初始化
     syscall_init();                 //初始化系统调用
+
+    intr_enable();                  //后面的ide_init 需要打开中断
+
+    ide_init();                     //初始化硬盘
+    filesys_init();                 //初始化文件系统
 }
 
 

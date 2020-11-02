@@ -10,7 +10,7 @@
 #include "stdio.h"
 #include "../lib/kernel/stdio-kernel.h"
 #include "../kernel/interrupt.h"
-#include "memory.h"
+#include "../kernel/memory.h"
 #include "../kernel/debug.h"
 #include "string.h"
 #include "../lib/kernel/io.h"
@@ -448,8 +448,9 @@ void ide_init() {
 
     struct ide_channel* channel;
     uint8_t channel_no = 0, dev_no = 0; 
-
-    //处理每个通道上的硬盘
+    
+    printk("channel_cnt = %d\n", channel_cnt);
+    //处理每个通道上的硬盘,因为有两块硬盘,所以只有一个通道 channel_cnt = 1
     while(channel_no < channel_cnt) {
 
         channel = &channels[channel_no];
@@ -460,7 +461,7 @@ void ide_init() {
 
         case 0:
             channel->port_base = 0x1f0;     //ide0通道的起始端口号是0x1f0
-            channel->irq_no    = 0x20 + 14; //从片8259A上倒数第二的中断引脚
+            channel->irq_no    = 0x20 + 14; //从片8259A上倒数第二的中断引脚,中断号
                                             //硬盘，也就是ide0通道的中断向量号
             break;
 
@@ -476,7 +477,7 @@ void ide_init() {
         lock_init(&channel->lock);
 
         /*初始化为0，目的是向硬盘控制器请求数据后，硬盘驱动sema_down此信号量会阻塞线程，直到硬盘完成后通过发中断,由
-         * 中断处理程序将此信号量sema_up，唤醒线程*/\
+         * 中断处理程序将此信号量sema_up，唤醒线程*/
         sema_init(&channel->disk_done, 0);
         register_handler(channel->irq_no, intr_hd_handler);
         

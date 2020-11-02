@@ -28,7 +28,7 @@ struct disk {
 
     char name[8];                       //本硬盘的名称，如sda 
 
-    struct ide_channel* my_channel;     //此块硬盘归属于那个ide通道一个通道上有两块硬盘，所以此成员用于指定本硬盘所属的通道
+    struct ide_channel* my_channel;     //此块硬盘归属于那个ide通道,一个通道上有两块硬盘，所以此成员用于指定本硬盘所属的通道
 
     uint8_t dev_no;                     //本硬盘是主0，还是从 1
 
@@ -43,7 +43,7 @@ struct ide_channel {
     char name[8];                       //本ata通道名称
 
     uint16_t port_base;                 //本通道的起始端口号
-    uint8_t irq_no;                     //本通道所用的中断号
+    uint8_t irq_no;                     //本通道所用的中断号,在硬盘的中断处理程序中要根据中断号来判断在哪个通道中操作
 
     struct lock lock;                   //通道锁
     bool expecting_intr;                //表示等待硬盘的中断,表示本通道正在等待硬盘中断
@@ -56,8 +56,11 @@ struct ide_channel {
 };
 
 void ide_init(void);
+
 extern uint8_t channel_cnt;
 extern struct ide_channel channels[];
+extern struct list partition_list;
+
 void intr_hd_handler(uint8_t irq_no);
 void ide_read(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt);
 void ide_write(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt);

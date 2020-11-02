@@ -13,19 +13,21 @@
 #include "../thread/thread.h"
 #include "../device/console.h"
 #include "string.h"
+#include "../fs/fs.h"
 
 #define syscall_nr 32
 typedef void* syscall;
 
 syscall syscall_table[syscall_nr];
 
+/*
 uint32_t sys_write(char* str) {
 
     console_put_str(str);
 
     return strlen(str);
 }
-
+*/
 //返回当前任务的pid 
 uint32_t sys_getpid(void) {
 
