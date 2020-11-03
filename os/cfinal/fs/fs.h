@@ -46,6 +46,17 @@ struct path_search_record {
     enum file_types file_type;              //找到的是普通文件,还是目录,找不到将为未知类型(FT_UNKNOWN)
 };
 
+/*文件属性结构体*/
+struct stat{
+
+    uint32_t st_ino;                        //inode编号
+    uint32_t st_size;                       //尺寸
+    enum file_types st_filetype;            //文件类型
+};
+
+
+
+
 void filesys_init(void);
 extern struct partition* cur_part;
 

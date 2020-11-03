@@ -80,6 +80,7 @@ struct thread_stack {
     thread_func* function;                      //由kernel_thread所调用的函数名
     void *func_arg;                                  //kernel_thread 所调用的函数所需的参数
 
+
 };
 
 
@@ -110,6 +111,7 @@ struct task_struct {
     //线程与进程的最大区别就是进程独享自己的地址空间，即进程有自己的页表，而线程共享所在进程的地址空间，即线程无页表
     //如果该任务为线程,pgdir 则为NULL,否则pgdir　会被赋予页表的虚拟地址，此处是虚拟地址，页表加载时还是要被转换成物理地址的 
     uint32_t* pgdir;                                    //进程自己页表的虚拟地址,任务自己的页表,用来存放进程页目录表的虚拟地址,
+    uint32_t cwd_inode_nr;                              //进程所在的工作目录的inode编号
     uint32_t stack_magic;                               //栈的边界标记，用于检测栈的溢出
     struct virtual_addr userprog_vaddr;                 //用户空间的虚拟地址
     struct mem_block_desc u_block_desc[DESC_CNT];       //用户进程内存块描述符
