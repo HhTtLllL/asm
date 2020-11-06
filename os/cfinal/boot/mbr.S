@@ -10,7 +10,7 @@ SECTION MBR vstart=0x7c00                   ;告诉编译器，把我的起始�
     mov ss, ax 
     mov fs, ax 
     mov sp, 0x7c00                          ;mbr 引导地址 初始化栈指针,栈是向下增长，这里的指令是向上增长，所以不会冲突
-    mov ax, 0xb800  ;文本模式显示的显存地址
+    mov ax, 0xb800                          ;文本模式显示的显存地址
     mov gs, ax 
 
 ;清屏，因为BIOS有一些输出，为了方便，看清所以清屏
@@ -25,8 +25,8 @@ SECTION MBR vstart=0x7c00                   ;告诉编译器，把我的起始�
 ;无返回值: 
     mov ax, 0600h 
     mov bx, 0700h 
-    mov cx, 0           ;左上角 
-    mov dx, 184fh       ;右下角
+    mov cx, 0                               ;左上角 
+    mov dx, 184fh                           ;右下角
 ;VGA 文本模式中，一行只能容纳80个字符，共25行
 ;下标从0开始，所以0x18=24， 0x4f=79 
 
