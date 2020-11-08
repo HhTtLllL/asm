@@ -701,10 +701,12 @@ void mem_init(){
 
     put_str("mem_init start\n");
     //物理地址0xb00中存储的是物理内存的总量
-    //先把0xb00转换成３２位整型指针，再通过*对该指针做取值操作，获取内存容量
+    //先把0xb00转换成 32 位整型指针，再通过*对该指针做取值操作，获取内存容量
     uint32_t mem_bytes_total = (*(uint32_t*)(0xb00));                   //物理地址0xb00中存储的是物理内存的总量
+
     mem_pool_init(mem_bytes_total);                                     //初始化内存池
     //初始化mem_block_desc 数组descs,为malloc 做准备
     block_desc_init(k_block_descs);
+
     put_str("mem init done\n");
 }

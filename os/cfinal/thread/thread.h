@@ -21,7 +21,6 @@ enum task_status {
     TASK_WAITING,
     TASK_HANGING,
     TASK_DIED
-    
 };
 
 /*中断栈  intr_stack
@@ -30,8 +29,6 @@ enum task_status {
  * 寄存器, intr_exit 中的出栈操作是此结构的逆操作 
  * 此栈在线程自己的内核栈中位置固定，所在页的最顶端
  * */
-
-
 struct intr_stack {
     
     uint32_t vec_no;                        //kernel.S宏Vector中push %1压入的中断号 
@@ -56,9 +53,8 @@ struct intr_stack {
     uint32_t eflags;
     void* esp;
     uint32_t ss; 
-
-
 };
+
 /* 线程栈  thread_stack   
  * 线程自己的栈，用于存储线程中等待执行的函数
  * 此结构在线程自己的内核栈中位置不固定，仅用在 switch_to时保存线程环境
@@ -77,17 +73,15 @@ struct thread_stack {
     //以下仅供第一次被调度上CPU时使用
     //参数 unused_ret 只为占位置充数为返回地址 
     void (*unused_retaddr);
-    thread_func* function;                      //由kernel_thread所调用的函数名
+    thread_func* function;                           //由kernel_thread所调用的函数名
     void *func_arg;                                  //kernel_thread 所调用的函数所需的参数
-
-
 };
 
 
 //进程或线程的 PCB 程序控制块 
 struct task_struct {
 
-    uint32_t* self_kstack;                  //各内核都用自己的内核栈
+    uint32_t* self_kstack;                  //各线程都用自己的内核栈
     pid_t pid;
     enum task_status status;                //线程状态
     uint8_t priority;                       //线程优先级
@@ -136,4 +130,4 @@ void sys_ps(void);
 
 
 
-#endif
+#endif          //__THREAD_THREAD_H 

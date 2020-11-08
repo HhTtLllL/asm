@@ -45,6 +45,7 @@ struct mem_block_desc {
 
 
 extern struct pool kernel_pool, user_pool;
+
 void mem_init(void);
 
 void* get_kernel_pages(uint32_t pg_cnt);
