@@ -57,7 +57,6 @@ intr_exit:
     add esp, 4              ;跳过error_code 
 
     iretd 
-
 ;正文
 
 VECTOR 0x00, ZERO
@@ -143,10 +142,4 @@ syscall_handler:                            ;中断例程
     ;4 将call 调用后的返回值存入当前内核栈中eax 的位置
     mov [esp + 8*4], eax    
     jmp intr_exit                           ;intr_exit 返回，恢复上下文
-
-
-
-
-
-
 

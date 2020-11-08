@@ -13,6 +13,7 @@
 #include "../lib/string.h"
 #include "../kernel/interrupt.h"
 #include "../fs/file.h"
+#include "../lib/kernel/stdio-kernel.h"
 
 /*用来存储inode位置*/
 struct inode_position {
@@ -102,6 +103,7 @@ void inode_sync(struct partition* part, struct inode* inode, void* io_buf) {
 /*根据i节点号返回相应的i节点*/
 struct inode* inode_open(struct partition* part, uint32_t inode_no) {
 
+    /*先在已经打开inode链表中找inode, 次链表是为提速创建的缓冲区*/
     struct list_elem* elem = part->open_inodes.head.next;
     struct inode* inode_found;
 
@@ -230,6 +232,10 @@ void inode_delete(struct partition* part, uint32_t inode_no, void* io_buf) {
 void inode_release(struct partition* part, uint32_t inode_no) {
 
     struct inode* inode_to_del = inode_open(part, inode_no);
+    if(NULL == inode_to_del) {
+
+        printk("inode_release: inode_to_del == NULL");
+    }
     ASSERT(inode_to_del->i_no == inode_no);
 
     /*1 回收inode 占用的所有块*/

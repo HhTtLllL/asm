@@ -362,7 +362,7 @@ int32_t file_write(struct file* file, const void* buf, uint32_t count) {
     uint32_t add_blocks = file_will_use_blocks - file_has_used_blocks;
     
     /*将写文件所用到的块地址收集到all_blocks,系统中块大小等于扇区大小,后面统一在all_blocks中获取写入扇区地址*/
-    if(0 == all_blocks) {
+    if(0 == add_blocks) {
 
         /*在同一扇区内写入数据,不设计分配新扇区*/
         if(file_will_use_blocks <= 12) {                    //文件数据量在12块之内

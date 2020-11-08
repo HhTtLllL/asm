@@ -303,23 +303,24 @@ bool delete_dir_entry(struct partition* part, struct dir* pdir, uint32_t inode_n
 
             if((dir_e + dir_entry_idx)->f_type != FT_UNKNOWN){
 
-                if(!strcmp((dir_e + dir_entry_idx)->filename, ".") && strcmp((dir_e + dir_entry_idx)->filename, "..")) {
+                if(!strcmp((dir_e + dir_entry_idx)->filename, ".")) {
+
+                    is_dir_first_block = true;
+                }else if(strcmp((dir_e + dir_entry_idx)->filename, ".") && strcmp((dir_e + dir_entry_idx)->filename, "..")) {
 
                     dir_entry_cnt++;                                //统计此扇区内的目录项个数,用来判断删除目录项后是否回收该扇区
-
                     if((dir_e + dir_entry_idx)->i_no == inode_no) { //如果找到此i结点,就将其记录在dir_entry_found
 
                         ASSERT(dir_entry_found == NULL);            //确保目录中只有一个编号为inode_no的inode,找到一次后dir_entry_found就不再是NULL
-                        
                         dir_entry_found = dir_e + dir_entry_idx;
                     }
                 }
             }
-
             dir_entry_idx++;
         }
+   
         /*若此扇区未找到该目录项,继续在下个扇区中找*/
-        if(dir_entry_found == NULL){
+        if(NULL == dir_entry_found){
 
             block_idx++;
             continue;
@@ -327,7 +328,7 @@ bool delete_dir_entry(struct partition* part, struct dir* pdir, uint32_t inode_n
 
         /*在此扇区中找到目录项后,清除该目录项并判断是否回收扇区,随后退出循环直接返回*/
         ASSERT(dir_entry_cnt >= 1);                                 //除目录第一个扇区外,若该扇区只有该目录项自己,则将整个扇区回收
-        if(dir_entry_cnt == 1 && !is_dir_first_block) {
+        if(1 == dir_entry_cnt && !is_dir_first_block) {
 
             /*a 在块位图中回收该块*/
             uint32_t block_bitmap_idx = all_blocks[block_idx] - part->sb->data_start_lba;
@@ -422,7 +423,7 @@ struct dir_entry* dir_read(struct dir* dir) {
 
     /*1 扇区内可容纳的目录项个数*/
     /*在目录大小内遍历*/
-    while(dir->dir_pos < dir_inode->i_size) {
+    while(block_idx < block_cnt) {
 
         if(dir->dir_pos >= dir_inode->i_size) {
 

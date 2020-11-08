@@ -20,6 +20,9 @@
 #include "stdint.h"
 #include "file.h"
 #include "../device/console.h"
+#include "../device/keyboard.h"
+#include "../device/ioqueue.h"
+
 
 struct partition* cur_part;                                 //默认情况下操作的是那个分区
 
@@ -230,7 +233,7 @@ static void partition_format(struct partition* part) {
  *
  * 调用结束后,返回除顶层路径之外的自路径字符串的地址
  */
-static char* path_parse(char* pathname, char* name_store) {
+char* path_parse(char* pathname, char* name_store) {
 
     if(pathname[0] == '/') {                                //根目录不需要单独解析
 
@@ -257,6 +260,7 @@ static char* path_parse(char* pathname, char* name_store) {
 /*搜索文件pathname, 若找到则返回其inode号,否则返回 -1*/
 static int search_file(const char* pathname, struct path_search_record* searched_record) {
 
+    printk("pathname = %s\n", pathname);
     /*如果待查找的是根目录,为避免下面无用的查找,直接返回已知根目录信息*/
     if(!strcmp(pathname, "/") || !strcmp(pathname, "/.") || !strcmp(pathname, "/..")) {
 
@@ -284,6 +288,8 @@ static int search_file(const char* pathname, struct path_search_record* searched
 
 
     sub_path = path_parse(sub_path, name);
+
+    printk("name = %s\n", name);
     while(name[0]) {                                                            /*若第一个字符就是结束符,结束循环*/
 
         /*记录查找过的路径,但不能超过searched_path的长度 512字节*/
@@ -319,7 +325,11 @@ static int search_file(const char* pathname, struct path_search_record* searched
 
                 return dir_e.i_no;
             }
-        }else {                                                                 //若找不到,则返回 -1
+        }else { 
+
+            printk("没有找到目录项\n");
+
+            //若找不到,则返回 -1
 
             /*找不到目录项时,要留着parent_dir不要关闭
              *若是创建新文件的话,需要parent_dir中创建
@@ -500,13 +510,6 @@ char* sys_getcwd(char* buf, uint32_t size) {
 }
 
 
-
-
-
-
-
-
-
 /*关闭文件描述符 fd 指向的文件,成功返回0, 否则返回 -1*/
 int32_t sys_close(int32_t fd) {
 
@@ -534,7 +537,7 @@ int32_t path_depth_cnt(char* pathname) {
 
     /*解析路径,从中拆分出各级名称*/
     p = path_parse(p, name);
-    printk("one path_parse\n");
+   // printk("one path_parse\n");
     while(name[0]) {
 
         depth++;
@@ -542,10 +545,10 @@ int32_t path_depth_cnt(char* pathname) {
         if(p) p = path_parse(p, name);
 
 
-        printk("two path_parse\n");
+       // printk("two path_parse\n");
     }
     
-    printk("return depth\n");
+   // printk("return depth\n");
     return depth;
 }
 
@@ -564,20 +567,20 @@ int32_t sys_open(const char* pathname, uint8_t flags) {
     ASSERT(flags <= 7);
     int32_t fd = -1;                                        //默认找不到
     
-    printk("ASSERT\n");
+    //printk("ASSERT\n");
     struct path_search_record searched_record;
     memset(&searched_record, 0, sizeof(struct path_search_record));
 
     /*记录目录深度,帮助判断中间某个目录不存在的情况*/
     uint32_t pathname_depth = path_depth_cnt((char*)pathname);
     
-    printk("path_depth_cnt\n");
+   // printk("path_depth_cnt\n");
 
     /*检查文件是否存在*/
     int inode_no = search_file(pathname, &searched_record);
     bool found = inode_no != -1 ? true : false; 
 
-    printk("386\n");
+   // printk("386\n");
     if(FT_DIRECTORY == searched_record.file_type) {
 
         printk("can't open a directory with open(), user opendir() to instead\n");
@@ -612,7 +615,7 @@ int32_t sys_open(const char* pathname, uint8_t flags) {
         return -1;
     }
 
-    printk(" in switch ");
+    //printk(" in switch ");
     switch(flags & O_CREAT) {
 
     case O_CREAT:
@@ -650,7 +653,7 @@ int32_t sys_write(int32_t fd, const void* buf, uint32_t count) {
         return count;
     }
     uint32_t _fd = fd_local2global(fd);
-    struct file* wr_file = &file_table[fd];
+    struct file* wr_file = &file_table[_fd];
     if(wr_file->fd_flag & O_WRONLY || wr_file->fd_flag & O_RDWR) {
 
         uint32_t bytes_written = file_write(wr_file, buf, count);
@@ -667,16 +670,31 @@ int32_t sys_write(int32_t fd, const void* buf, uint32_t count) {
 /*从文件描述符fd 指向的文件中读取count个字节到 buf, 若成功则返回读出的字节数,到文件尾则返回 -1*/
 int32_t sys_read(int32_t fd, void* buf, uint32_t count) {
 
-    if(fd < 0) {
+    ASSERT(NULL != buf);
 
-        printk("sys_read: fd error\n");
-        return -1;
+    int32_t ret = -1;
+    if(fd < 0 || fd == stdout_no || fd == stderr_no) {
+
+        printk("sys_read: fd error");
+    }else if(fd == stdin_no){
+
+        char* buffer = buf;
+        uint32_t bytes_read = 0;
+        while(bytes_read < count) {
+
+            *buffer = ioq_getchar(&kbd_buf);
+            bytes_read++;
+            buffer++;
+        }
+
+        ret = (bytes_read == 0 ? -1 : (int32_t)bytes_read);
+    }else {
+
+        uint32_t _fd = fd_local2global(fd);
+        ret = file_read(&file_table[_fd], buf, count);
     }
 
-    ASSERT(buf != NULL);
-    uint32_t _fd = fd_local2global(fd);
-
-    return file_read(&file_table[_fd], buf, count);
+    return ret;
 }
 
 /*重置用于文件读写操作的偏移指针,成功时返回新的偏移量, 出错时返回-1*/
@@ -964,7 +982,7 @@ struct dir* sys_opendir(const char* name) {
 int32_t sys_closedir(struct dir* dir) {
 
     int32_t ret = -1;
-    if(NULL == dir) {
+    if(NULL != dir) {
 
         dir_close(dir);
         ret = 0;
@@ -1033,7 +1051,7 @@ int32_t sys_chdir(const char* path) {
     memset(&searched_record, 0, sizeof(struct path_search_record));
 
     int inode_no = search_file(path, &searched_record);
-    if(-1 == inode_no) {
+    if(-1 != inode_no) {
 
         if(FT_DIRECTORY == searched_record.file_type) {
 
@@ -1069,7 +1087,7 @@ int32_t sys_stat(const char* path, struct stat* buf) {
     memset(&searched_record, 0, sizeof(struct path_search_record)); //初始化信息为0,否则栈中的信息不知道将会是什么
 
     int inode_no = search_file(path, &searched_record);
-    if(-1 == inode_no) {
+    if(-1 != inode_no) {
 
         struct inode* obj_inode = inode_open(cur_part, inode_no);
 
@@ -1091,13 +1109,11 @@ int32_t sys_stat(const char* path, struct stat* buf) {
     return ret;
 }
 
+/*向屏幕输出一个字符*/
+void sys_putchar(char asci) {
 
-
-
-
-
-
-
+    console_put_char(asci);
+}
 
 /*在磁盘上搜索文件系统,若没有则格式化分区创建文件系统*/
 void filesys_init() {

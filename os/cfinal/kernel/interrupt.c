@@ -5,11 +5,10 @@
 // Created Time : 2020-09-29 11:56:07
 // Description:
 ///////////////////////////////////////////////////////////////
-
 #include "interrupt.h"
 #include "stdint.h"
 #include "global.h"
-#include "io.h"
+#include "../lib/kernel/io.h"
 #include "print.h"
 
 #define PIC_M_CTRL 0x20         //这里用的是可编程中断控制器是8259a,主片的控制端口是0x20 
@@ -18,35 +17,44 @@
 #define PIC_S_DATA 0xa1         //从片的数据端口是0xa1 
 
 #define IDT_DESC_CNT 0x81       //目前总共支持的中断数 
-
 #define EFLAGS_IF 0x00000200    //eflags 寄存器中的if位为1  开中断时,eflags 寄存器中的IF的值,IF位于eflags 中的第9位,所以为0x00000200 
-/* EFLAG_VAR 是c中用来存储eflags 值的变量,
- * */
+/* EFLAG_VAR 是c中用来存储eflags 值的变量 */
 #define GET_EFLAGS(EFLAG_VAR) asm volatile("pushfl; popl %0" : "=g"(EFLAG_VAR))
 
 extern uint32_t syscall_handler(void);          //syscall_handler 就是系统调用对应的中断入口例程
 
 /*中断门描述符结构体*/
-
 struct gate_desc {
-    uint16_t func_offset_low_word;
-    uint16_t selector; 
-    uint8_t dcount;             //此项为双字计数段,是门描述符中第4字节,此项固定值 
+
+    uint16_t func_offset_low_word;              //中断处理程序在目标代码段内的偏移量0 ~ 15位
+    uint16_t selector;                          //中断处理程序目标代码段描述符选择子
+    uint8_t dcount;                             //此项为双字计数段,是门描述符中第4字节,此项固定值 
 
     uint8_t attribute;          
-    uint16_t func_offset_high_word; 
+    uint16_t func_offset_high_word;             //中断处理程序在目标段内偏移量的 16 ~ 31位
 };
 
-
 //静态函数声明,非必须 
-static void make_idt_desc(struct gate_desc* p_gdesc, uint8_t attr, intr_handler function);
-static struct gate_desc idt[IDT_DESC_CNT];      //idt 是中断描述符表,本质上就是个中断描述符数组
+//static void make_idt_desc(struct gate_desc* p_gdesc, uint8_t attr, intr_handler function);
+static struct gate_desc idt[IDT_DESC_CNT];                  //idt 是中断描述符表,本质上就是个中断描述符数组
 
 //用于保存异常的名字
 char* intr_name[IDT_DESC_CNT];                              //用于保存异常的名字 
 intr_handler idt_table[IDT_DESC_CNT];                       //定义中断处理程序数组，在kernel.asm 中定义的 intrxxentry 只是中断处理程序的入口
                                                             //,最终调用的是idt_table中的处理程序
 extern intr_handler intr_entry_table[IDT_DESC_CNT];         //声明引用定义在kernel.S中的中断处理函数入口数组 
+/*创建中断门描述符          中断门描述符的指针, 中断描述符内的属性    中断描述符内对应的处理函数*/ 
+
+static void make_idt_desc(struct gate_desc* p_gdesc, uint8_t attr, intr_handler function) {
+    
+    p_gdesc->func_offset_low_word   = (uint32_t)function & 0x0000FFFF;
+    p_gdesc->selector               = SELECTOR_K_CODE;
+    p_gdesc->dcount                 = 0;
+    p_gdesc->attribute              = attr;
+    p_gdesc->func_offset_high_word  = ((uint32_t)function & 0xFFFF0000) >> 16;
+
+}
+
 
 //初始化中断描述符表
 static void idt_desc_init(void) {
@@ -100,18 +108,6 @@ static void pic_init(void) {
 
 
     put_str("    pic_init done\n");
-
-}
-
-
-/*创建中断门描述符          中断门描述符的指针, 中断描述符内的属性    中断描述符内对应的处理函数*/ 
-static void make_idt_desc(struct gate_desc* p_gdesc, uint8_t attr, intr_handler function) {
-    
-    p_gdesc->func_offset_low_word   = (uint32_t)function & 0x0000FFFF;
-    p_gdesc->selector               = SELECTOR_K_CODE;
-    p_gdesc->dcount                 = 0;
-    p_gdesc->attribute              = attr;
-    p_gdesc->func_offset_high_word  = ((uint32_t)function & 0xFFFF0000) >> 16;
 
 }
 

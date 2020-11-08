@@ -112,6 +112,7 @@ struct task_struct {
     //如果该任务为线程,pgdir 则为NULL,否则pgdir　会被赋予页表的虚拟地址，此处是虚拟地址，页表加载时还是要被转换成物理地址的 
     uint32_t* pgdir;                                    //进程自己页表的虚拟地址,任务自己的页表,用来存放进程页目录表的虚拟地址,
     uint32_t cwd_inode_nr;                              //进程所在的工作目录的inode编号
+    int16_t parent_pid;
     uint32_t stack_magic;                               //栈的边界标记，用于检测栈的溢出
     struct virtual_addr userprog_vaddr;                 //用户空间的虚拟地址
     struct mem_block_desc u_block_desc[DESC_CNT];       //用户进程内存块描述符
@@ -130,5 +131,9 @@ void thread_init(void);
 void thread_block(enum task_status stat);
 void thread_unblock(struct task_struct* pthread);
 void thread_yield(void);
+pid_t fork_pid(void);
+void sys_ps(void);
+
+
 
 #endif

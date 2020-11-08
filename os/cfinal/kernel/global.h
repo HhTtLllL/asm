@@ -3,7 +3,7 @@
 #include "stdint.h"
 
 //--------------------------GDT  描述符属性 ----------------
-#define DESC_G_4K            1
+#define DESC_G_4K           1
 #define DESC_D_32           1
 #define DESC_L              0           //64位代码标记，此处标记为0便可
 #define DESC_AVL            0           //cpu 不用占用此位，标记为0
