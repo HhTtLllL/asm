@@ -9,7 +9,7 @@
 #include "stdint.h"
 #include "global.h"
 #include "../lib/kernel/io.h"
-#include "print.h"
+#include "../lib/kernel/print.h"
 
 #define PIC_M_CTRL 0x20         //这里用的是可编程中断控制器是8259a,主片的控制端口是0x20 
 #define PIC_M_DATA 0x21         //主片的数据端口是0x21 
@@ -40,19 +40,21 @@ static struct gate_desc idt[IDT_DESC_CNT];                  //idt 是中断描�
 
 //用于保存异常的名字
 char* intr_name[IDT_DESC_CNT];                              //用于保存异常的名字 
+
+/*intr_handler 是 void* */
 intr_handler idt_table[IDT_DESC_CNT];                       //定义中断处理程序数组，在kernel.asm 中定义的 intrxxentry 只是中断处理程序的入口
                                                             //,最终调用的是idt_table中的处理程序
 extern intr_handler intr_entry_table[IDT_DESC_CNT];         //声明引用定义在kernel.S中的中断处理函数入口数组 
-/*创建中断门描述符          中断门描述符的指针, 中断描述符内的属性    中断描述符内对应的处理函数*/ 
 
+
+/*创建中断门描述符          中断门描述符的指针, 中断描述符内的属性    中断描述符内对应的中断处理函数*/ 
 static void make_idt_desc(struct gate_desc* p_gdesc, uint8_t attr, intr_handler function) {
     
     p_gdesc->func_offset_low_word   = (uint32_t)function & 0x0000FFFF;
-    p_gdesc->selector               = SELECTOR_K_CODE;
+    p_gdesc->selector               = SELECTOR_K_CODE;                      //指向内核数据段的选择子
     p_gdesc->dcount                 = 0;
     p_gdesc->attribute              = attr;
     p_gdesc->func_offset_high_word  = ((uint32_t)function & 0xFFFF0000) >> 16;
-
 }
 
 
@@ -61,8 +63,9 @@ static void idt_desc_init(void) {
 
     int lastindex = IDT_DESC_CNT - 1;                       //lastindex = 0x80 ,
 
-    for(int i = 0; i < IDT_DESC_CNT; i ++ ) {
-
+    for(int i = 0; i < IDT_DESC_CNT; i ++) {
+                      //中断门描述符的指针，　中段描述符内的属性，　中断描述符内对应的处理函数
+        //idt　中断描述符表
         make_idt_desc(&idt[i], IDT_DESC_ATTR_DPL0, intr_entry_table[i]);
     }
 
@@ -88,7 +91,7 @@ static void pic_init(void) {
     outb(PIC_S_DATA, 0x02);             //ICW3: 设置从片连接到主片的IR2引脚
     outb(PIC_S_DATA, 0x01);             //ICW4: 8086模式, 正常EOI 
     
-    //打开主片上IR0, 也就是母亲只介绍时钟产生的中断 
+    //打开主片上IR0, 也就是只介绍时钟产生的中断 
 //    outb(PIC_M_DATA, 0xfe);
   //  outb(PIC_S_DATA, 0xff);
     
@@ -155,17 +158,18 @@ static void exception_init(void) {
 
     /* idt_table 数组中的函数是在进入中断后根据中断向量号调用的,见kernel/kernel.asm 的call [idt_table + %1*4] */
     for(int i = 0; i < IDT_DESC_CNT; i ++ ){
-
-        idt_table[i] = general_intr_handler; 
+    
+        /*idt_table 中存储的是处理中断的函数 */
         //默认为general_intr_handler 
         //以后会由register_handler 来注册具体处理函数 
+        idt_table[i] = general_intr_handler; 
         
         intr_name[i] = "unknown";           //先统一赋值为unknown
     }
 
-    intr_name[0]  = "#DE Divide Error";
+    intr_name[0]  = "#DE Divide Error";                 //出发错误
     intr_name[1]  = "#DB Debug Exception";
-    intr_name[2]  = "NMI Interrupt";
+    intr_name[2]  = "NMI Interrupt";                    //不可屏蔽中断
     intr_name[3]  = "#BP Breakpoint Exception";
     intr_name[4]  = "#OF Overflow Exception";
     intr_name[5]  = "#BR Bound Range Exceeded Exception";
@@ -178,7 +182,7 @@ static void exception_init(void) {
     intr_name[12] = "#SS Stack Fault Exception";
     intr_name[13] = "#GP General Protection Exception";
     intr_name[14] = "#PF Page-Fault Exception";
-  //  intr_name[15] 第15
+  //  intr_name[15] 
     intr_name[16] = "#MF x87 FPU Floating-Point Error";
     intr_name[17] = "#AC Alignment Check Exception";
     intr_name[18] = "#MC Machine-Check Exception";
@@ -200,6 +204,7 @@ enum intr_status intr_enable(){
 
         old_status = INTR_OFF;
         asm volatile("sti");            //开中断指令
+
         return old_status;
     }
 }
@@ -218,6 +223,7 @@ enum intr_status intr_disable() {
     }else {
 
         old_status = INTR_OFF;
+
         return old_status;
     }
 }
@@ -252,6 +258,7 @@ void register_handler(uint8_t vector_no, intr_handler function) {
 void idt_init() {
 
     put_str("idt_init start\n");
+    //填充中断描述符表
     idt_desc_init();                //初始化中断描述符表
     exception_init();               //异常名初始化并注册通常的中断处理函数
     pic_init();                     //初始化8259A 
@@ -261,5 +268,4 @@ void idt_init() {
     asm volatile("lidt %0" : : "m" (idt_operand));
     put_str("idt_init done\n");
 }
-
 

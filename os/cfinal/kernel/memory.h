@@ -35,7 +35,7 @@ struct mem_block {
     struct list_elem free_elem;             //链表成员节点
 };
 
-//内存快描述符
+//内存块描述符
 struct mem_block_desc {
 
     uint32_t block_size;                    //内存块大小

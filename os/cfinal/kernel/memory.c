@@ -8,13 +8,13 @@
 
 #include "memory.h"
 #include "stdint.h"
-#include "print.h"
-#include "bitmap.h"
+#include "../lib/kernel/print.h"
+#include "../lib/kernel/bitmap.h"
 #include "global.h"
 #include "debug.h"
 #include "string.h"
 #include "../thread/thread.h"
-#include "sync.h"
+#include "../thread/sync.h"
 #include "interrupt.h"
 
 #define PG_SIZE 4096                //即 4KB
@@ -77,7 +77,6 @@ static void* vaddr_get(enum pool_flags pf, uint32_t pg_cnt) {
 
             bitmap_set(&kernel_vaddr.vaddr_bitmap, bit_idx_start + cnt++, 1);
         }
-
         //转化为虚拟地址,就是虚拟内存池的起始地址kernel_vaddr.vaddr_start 加上起始位索引bit_idx_start相对于内存池的虚拟页偏移地址
         vaddr_start = kernel_vaddr.vaddr_start + bit_idx_start * PG_SIZE;
     }else {

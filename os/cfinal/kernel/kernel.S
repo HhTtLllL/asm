@@ -17,7 +17,7 @@ intr_entry_table:
 section .text 
 
 ;在汇编中调用c 程序,回破坏现有寄存器,所以需要保护
-intr%1entry:                ;intr[0-32]entry 每个终端程序都要压入中断向量号,所以一个中断类型一个中断处理程序,自己知道自己的中断向量号是多少
+intr%1entry:                ;intr[0-32]entry 每个中断程序都要压入中断向量号,所以一个中断类型一个中断处理程序,自己知道自己的中断向量号是多少
 
     %2                      ;中断若有错误码,会压在eip后面
 ;以下是保存上下文环境
@@ -57,8 +57,8 @@ intr_exit:
     add esp, 4              ;跳过error_code 
 
     iretd 
-;正文
 
+;正文
 VECTOR 0x00, ZERO
 VECTOR 0x01, ZERO
 VECTOR 0x02, ZERO
