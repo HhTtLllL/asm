@@ -73,6 +73,8 @@ static void idt_desc_init(void) {
     //中断处理程序为单独的syscall_handler 
     //给0x80 中断向量对应的中断描述符,在描述符中注册的中断处理例程为syscall_handler
     make_idt_desc(&idt[lastindex], IDT_DESC_ATTR_DPL3, syscall_handler);
+    
+
     put_str("    idt_desc_init done\n");
 }
 
