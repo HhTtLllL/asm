@@ -5,7 +5,6 @@
 // Created Time : 2020-10-09 14:58:38
 // Description:
 ///////////////////////////////////////////////////////////////
-
 #include "memory.h"
 #include "stdint.h"
 #include "../lib/kernel/print.h"
@@ -28,8 +27,8 @@
 //0xc0000000 是内核从虚拟地址3G起, 0x100000意指跨过低端 1MB,是虚拟地址在逻辑上连续
 #define K_HEAP_START 0xc0100000 
 
-#define PDE_IDX(addr) ((addr & 0xffc00000) >> 22)
-#define PTE_IDX(addr) ((addr & 0x003ff000) >> 12)
+#define PDE_IDX(addr) ((addr & 0xffc00000) >> 22)                   //用来返回虚拟地址的高10位   --pde索引部分,用于在页目录表中定位pde
+#define PTE_IDX(addr) ((addr & 0x003ff000) >> 12)                   //用来返回虚拟地址的中间10位 --pte索引部分,用于在页表中定位pte
 
 
 //内存池结构,生成两个实例用于管理内核内存池和用户内存池 
@@ -42,10 +41,8 @@ struct pool {
     struct lock lock;
 };
 
-
 struct pool kernel_pool, user_pool; //生成内核内存池和用户内存池
 struct virtual_addr kernel_vaddr;   //此结构用来给内核分配虚拟地址
-
 
 //内存仓库
 struct arena {
@@ -101,8 +98,16 @@ static void* vaddr_get(enum pool_flags pf, uint32_t pg_cnt) {
 
 //得到虚拟地址 vaddr 对应的pte指针,这个指针也是虚拟地址
 uint32_t* pte_ptr(uint32_t vaddr) {
-
+    
+    //根据vaddr构造出一个新的虚拟地址,用这个new_vaddr访问vaddr本身所在的pte的物理地址
+    //虚拟地址最终会落到某个物理地址上。　　即用这个虚拟地址访问某个确切的物理地址
     //先访问到页表自己 + 再用页目录项pde(页目录内页表的索引)作为pte的索引访问到页表 + 再用pte的索引页作为页内偏移
+    //
+    //1. 由于最后一个页目录项保存的正是页目录表物理地址，所以我们只需要让该地址的高10位指向最后一个页目录项，即1023个pde,获取
+    //页目录表本身的物理地址。
+    //2. 将vaddr的高10位取出来，做新地址new_vaddr的中间10位
+    //
+    //
     uint32_t* pte = (uint32_t*)(0xffc00000 + ((vaddr & 0xffc00000) >> 10) + PTE_IDX(vaddr) * 4);
 
     return pte;
@@ -623,9 +628,9 @@ void block_desc_init(struct mem_block_desc* desc_array) {
 static void mem_pool_init(uint32_t all_mem) {
 
     put_str("   mem_pool_init start\n");
+
     //页表大小 = 1页的页目录表 + 第0和第768 个页目录项指向同一个页表 + 第769~1022个页目录项共指向254个页表, 共256个页框
     uint32_t page_table_size = PG_SIZE * 256;
-
     uint32_t used_mem = page_table_size + 0x100000;     //0x100000 为低端1MB内存
 
     uint32_t free_mem = all_mem - used_mem;
@@ -657,7 +662,6 @@ static void mem_pool_init(uint32_t all_mem) {
 //内核内存池的位图先定在MEM_BITMAP_BASE (0xc009a000)处 
     
     kernel_pool.pool_bitmap.bits = (void*)MEM_BITMAP_BASE;
-
     //用户内存池的位图紧跟在内核内存池位图之后 
     user_pool.pool_bitmap.bits = (void*)(MEM_BITMAP_BASE + kbm_length);
 
@@ -678,12 +682,11 @@ static void mem_pool_init(uint32_t all_mem) {
     bitmap_init(&kernel_pool.pool_bitmap);
     bitmap_init(&user_pool.pool_bitmap);
 
-
-       
     lock_init(&kernel_pool.lock);
     lock_init(&user_pool.lock);
 
     //下面初始化内核虚拟地址的位图,按实际物理内存大小生成数组 
+    //kenel_vaddr用来给内核分配虚拟内存的
     kernel_vaddr.vaddr_bitmap.btmp_bytes_len = kbm_length;
     //用于维护内核堆的虚拟地址,所以要和内核内存池大小一致 
     //位图的数组指向一块未使用的内存,目前定位在内核内存池和用户内存池之外
@@ -692,7 +695,6 @@ static void mem_pool_init(uint32_t all_mem) {
     kernel_vaddr.vaddr_start = K_HEAP_START;
     bitmap_init(&kernel_vaddr.vaddr_bitmap);
     put_str("  mem_pool_init done\n");
-
 }
 
 //内存管理部分初始化入口
