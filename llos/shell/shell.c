@@ -151,7 +151,6 @@ static int32_t cmd_parse(char* cmd_str, char** argv, char token) {
 void my_shell(void) {
 
     cwd_cache[0] = '/';
-    //cwd_cache[1] = 0;
     while(1) {
 
         print_prompt();
@@ -172,9 +171,6 @@ void my_shell(void) {
             continue;
         }
 
-        char buf[MAX_PATH_LEN] = {0};
-
-        int32_t arg_idx = 0;
         if(!strcmp("ls", argv[0])) {
 
             buildin_ls(argc, argv);
@@ -208,16 +204,6 @@ void my_shell(void) {
             printf("external commadn\n");
         }
     }
-
-       /* while(arg_idx < argc) {
-    
-            make_clear_abs_path(argv[arg_idx], buf);
-            printf("%s -> %s", argv[arg_idx], buf);
-            arg_idx++;
-        }
-
-        printf("\n");
-    }*/
 
     panic("my_shell: shoud not be here");
 }

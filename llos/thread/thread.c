@@ -184,7 +184,6 @@ static void make_main_thread(void) {
     //所以只将其加在 thread_all_list 中
     ASSERT( !elem_find(&thread_all_list, &main_thread->all_list_tag) ); 
     list_append(&thread_all_list, &main_thread->all_list_tag);
-
 }
 
 /*以填充空格的方式输出 buf*/
@@ -227,7 +226,7 @@ static bool elem2thread_info(struct list_elem* pelem, int arg UNUSED) {
 
     if (pthread->parent_pid == -1) {
  
-        pad_print(out_pad, 16, "NULL", 's');
+        pad_print(out_pad, 16, (void *)"NULL", 's');
     } else { 
         
         pad_print(out_pad, 16, &pthread->parent_pid, 'd');
@@ -236,27 +235,27 @@ static bool elem2thread_info(struct list_elem* pelem, int arg UNUSED) {
     switch (pthread->status) {
     case 0:
        
-        pad_print(out_pad, 16, "RUNNING", 's');
+        pad_print(out_pad, 16, (void *)"RUNNING", 's');
         break;
     case 1:
         
-        pad_print(out_pad, 16, "READY", 's');
+        pad_print(out_pad, 16, (void *)"READY", 's');
         break;
     case 2:
         
-        pad_print(out_pad, 16, "BLOCKED", 's');
+        pad_print(out_pad, 16, (void *)"BLOCKED", 's');
         break;
     case 3:
         
-        pad_print(out_pad, 16, "WAITING", 's');
+        pad_print(out_pad, 16, (void *)"WAITING", 's');
         break;
     case 4:
         
-        pad_print(out_pad, 16, "HANGING", 's');
+        pad_print(out_pad, 16, (void *)"HANGING", 's');
         break;
     case 5:
         
-        pad_print(out_pad, 16, "DIED", 's');
+        pad_print(out_pad, 16, (void *)"DIED", 's');
     }
     pad_print(out_pad, 16, &pthread->elapsed_ticks, 'x');
 
@@ -372,7 +371,6 @@ void thread_yield(void) {
 
     intr_set_status(old_status);
 }
-
 
 
 //初始化线程环境

@@ -310,7 +310,7 @@ int32_t file_write(struct file* file, const void* buf, uint32_t count) {
     /*为写硬盘是方便获取块地址,我们打算文件所有的块地址收集到 all_blocks 中统一获取
      *
      *BLOCK_SIZE + 128 = 128个间接块 + 12个直接块的大小
-     * */
+     */
     uint32_t* all_blocks = (uint32_t*)sys_malloc(BLOCK_SIZE + 48);
     if( NULL == all_blocks ) {
 

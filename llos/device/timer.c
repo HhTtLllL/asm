@@ -7,29 +7,29 @@
 ///////////////////////////////////////////////////////////////
 
 #include "timer.h"
-#include "io.h"
-#include "print.h"
+#include "../lib/kernel/io.h"
+#include "../lib/kernel/print.h"
 #include "../thread/thread.h"
-#include "interrupt.h"
-#include "debug.h"
+#include "../kernel/interrupt.h"
+#include "../kernel/debug.h"
 
-#define IRQ0_FREQUENCY      100
-#define INPUT_FREQUENCY     1193180 
-#define COUNTER0_VALUE      INPUT_FREQUENCY / IRQ0_FREQUENCY 
-#define COUNTER0_PORT       0x40 
-#define COUNTER0_NO         0
-#define COUNTER_MODE        2
-#define READ_WRITE_LATCH    3
-#define PIT_CONTROL_PORT    0x43
+#define IRQ0_FREQUENCY       100
+#define INPUT_FREQUENCY      1193180 
+#define COUNTER0_VALUE       INPUT_FREQUENCY / IRQ0_FREQUENCY 
+#define COUNTER0_PORT        0x40 
+#define COUNTER0_NO          0
+#define COUNTER_MODE         2
+#define READ_WRITE_LATCH     3
+#define PIT_CONTROL_PORT     0x43
 #define mil_seconds_per_intr (1000 / IRQ0_FREQUENCY)                //多少毫秒发生一次中断,也就是以毫秒计算的中断周期,一个中断周期是10毫秒
 
-uint32_t ticks;                     //ticks 是内核自中断开启以来总共的滴答数
+uint32_t ticks;                                                     //ticks 是内核自中断开启以来总共的滴答数
 
 /*以 tick 为单位的sleep,任何时间形式的sleep会转换此 ticks 形式
  *中断发生的次数ticks,即滴答数
 
  功能:让任务休眠sleep_ticks个ticks 
- * */
+*/
 static void ticks_to_sleep(uint32_t sleep_ticks) {
 
     uint32_t start_tick = ticks;

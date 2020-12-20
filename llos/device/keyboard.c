@@ -7,21 +7,21 @@
 ///////////////////////////////////////////////////////////////
 
 #include "keyboard.h"
-#include "print.h"
-#include "interrupt.h"
-#include "io.h"
-#include "global.h"
+#include "../lib/kernel/print.h"
+#include "../kernel/interrupt.h"
+#include "../lib/kernel/io.h"
+#include "../kernel/global.h"
 #include <stdbool.h>
 #include "ioqueue.h"
 
 #define KBD_BUF_PORT 0x60           //键盘buffer寄存器端口号为0x60
 
 //用转移字符定义部分控制字符
-#define esc         '\033'          //八进制表示字符，也可以用16进制 '\x1b'
-#define backspace   '\b'
-#define tab         '\t'
-#define enter       '\r'
-#define delete      '\177'          //八进制表示字符，十六进制为 '\x7f'
+#define esc          '\033'         //八进制表示字符，也可以用16进制 '\x1b'
+#define backspace    '\b'
+#define tab          '\t'
+#define enter        '\r'
+#define delete       '\177'         //八进制表示字符，十六进制为 '\x7f'
 
 
 //以上不可见字符一律定义为 0

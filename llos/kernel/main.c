@@ -34,6 +34,7 @@ void u_prog_b(void);
 int prog_a_pid = 0, prog_b_pid = 0;
 //int test_var_a = 0, test_var_b = 0;
 int main(void) {
+
    put_str("I am kernel\n");
    init_all();
 

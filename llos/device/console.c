@@ -6,7 +6,7 @@
 // Description:
 ///////////////////////////////////////////////////////////////
 #include "console.h"
-#include "print.h"
+#include "../lib/kernel/print.h"
 #include "stdint.h"
 #include "../thread/sync.h"
 #include "../thread/thread.h"
@@ -48,7 +48,7 @@ void console_put_char(uint8_t char_asci) {
     console_release();
 }
 
-//终端中输出16进制证书
+//终端中输出16进制整数
 void console_put_int(uint32_t num) {
 
     console_acquire();

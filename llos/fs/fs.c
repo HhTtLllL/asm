@@ -328,12 +328,11 @@ static int search_file(const char* pathname, struct path_search_record* searched
         }else { 
 
             printk("没有找到目录项\n");
-
             //若找不到,则返回 -1
 
             /*找不到目录项时,要留着parent_dir不要关闭
              *若是创建新文件的话,需要parent_dir中创建
-             * */
+             */
 
             return -1;
         }
@@ -351,8 +350,8 @@ static int search_file(const char* pathname, struct path_search_record* searched
 
 /*将文件描述符转化为文件表的下标]
  *
- * 将local_fd 作为下标带入数组fd_table, fd_table[local_fd]的值便是文件表的下标
- * */
+ *将local_fd 作为下标带入数组fd_table, fd_table[local_fd]的值便是文件表的下标
+ */
 static uint32_t fd_local2global(uint32_t local_fd) {
 
     struct task_struct* cur = running_thread();
@@ -445,6 +444,7 @@ char* sys_getcwd(char* buf, uint32_t size) {
 
     /*确保buf 不为空,若用户进程提供的buf为NULL,系统调用getcwd中要为用户进程通过malloc分配内存*/
     ASSERT(NULL != buf);
+
     void* io_buf = sys_malloc(SECTOR_SIZE);
     if(NULL == io_buf) {
 
@@ -471,8 +471,8 @@ char* sys_getcwd(char* buf, uint32_t size) {
 
     /*从下往上 逐层找父目录,知道找到根目录为止
      *当child_inode_nr为根目录的inode编号(0)时停止
-     即已经查看完根目录中的目录项
-     * */
+        即已经查看完根目录中的目录项
+     */
 
     while((child_inode_nr)) {
 
@@ -543,12 +543,8 @@ int32_t path_depth_cnt(char* pathname) {
         depth++;
         memset(name, 0, MAX_FILE_NAME_LEN);
         if(p) p = path_parse(p, name);
-
-
-       // printk("two path_parse\n");
     }
-    
-   // printk("return depth\n");
+
     return depth;
 }
 
@@ -567,20 +563,16 @@ int32_t sys_open(const char* pathname, uint8_t flags) {
     ASSERT(flags <= 7);
     int32_t fd = -1;                                        //默认找不到
     
-    //printk("ASSERT\n");
     struct path_search_record searched_record;
     memset(&searched_record, 0, sizeof(struct path_search_record));
 
     /*记录目录深度,帮助判断中间某个目录不存在的情况*/
     uint32_t pathname_depth = path_depth_cnt((char*)pathname);
-    
-   // printk("path_depth_cnt\n");
 
     /*检查文件是否存在*/
     int inode_no = search_file(pathname, &searched_record);
     bool found = inode_no != -1 ? true : false; 
 
-   // printk("386\n");
     if(FT_DIRECTORY == searched_record.file_type) {
 
         printk("can't open a directory with open(), user opendir() to instead\n");
@@ -606,6 +598,7 @@ int32_t sys_open(const char* pathname, uint8_t flags) {
     
         printk("in path %s, file %s is`t exist\n",searched_record.searched_path, (strrchr(searched_record.searched_path, '/') + 1));
         dir_close(searched_record.parent_dir);
+
         return -1;
     }else if(found && flags & O_CREAT) {                                //若要创建的文件已经存在
 
@@ -678,7 +671,7 @@ int32_t sys_read(int32_t fd, void* buf, uint32_t count) {
         printk("sys_read: fd error");
     }else if(fd == stdin_no){
 
-        char* buffer = buf;
+        char* buffer = (char *)buf;
         uint32_t bytes_read = 0;
         while(bytes_read < count) {
 
@@ -1122,8 +1115,7 @@ void filesys_init() {
 
     /*sb_buf 用来存储从硬盘上读入的超级块*/
     struct super_block* sb_buf = \
-    (struct super_block*)sys_malloc(SECTOR_SIZE);
-
+            (struct super_block*)sys_malloc(SECTOR_SIZE);
     if(sb_buf == NULL) {
 
         PANIC("alloc memory failed!\n");
@@ -1192,5 +1184,3 @@ void filesys_init() {
         file_table[fd_idx++].fd_inode = NULL;
     }
 }
-
-
